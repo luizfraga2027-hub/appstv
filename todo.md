@@ -105,3 +105,18 @@
 - [x] Criar página de login admin com URL secreta
 - [x] Implementar proteção de rota para admin (verificação de role)
 - [x] Testar acesso e segurança
+
+
+## FASE 12: Limpeza Completa - Remover E-mail e Serviços Externos
+- [x] Remover campo email da tabela users no schema
+- [x] Remover campo loginMethod da tabela users
+- [x] Atualizar migrations do banco de dados
+- [x] Remover validação de e-mail do registro
+- [x] Remover validação de e-mail do login
+- [x] Remover todas as referências a OAuth no código
+- [x] Remover integração com Manus OAuth
+- [x] Remover integração com Google/GitHub
+- [x] Remover integração com Stripe
+- [x] Auditar e remover qualquer serviço externo
+- [x] Testar login/registro com apenas username + password
+- [x] Verificar que nenhum e-mail é enviado

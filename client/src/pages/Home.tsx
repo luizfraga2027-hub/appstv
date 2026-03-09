@@ -2,264 +2,351 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useLocation } from "wouter";
-import { ChevronRight, Shield, Zap, Users, Lock, BarChart3 } from "lucide-react";
+import { getLoginUrl } from "@/const";
+import { AlertCircle, Zap, Users, Lock, Smartphone, BarChart3, Shield, Cpu } from "lucide-react";
 
 export default function Home() {
   const { user, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
 
-  if (isAuthenticated && user) {
-    // Redirect to appropriate dashboard based on role
-    if (user.role === "admin") {
-      setLocation("/admin");
-    } else if (user.role === "reseller") {
-      setLocation("/dashboard/reseller");
+  const handleGetStarted = () => {
+    if (isAuthenticated && user) {
+      if (user.role === "admin") setLocation("/admin");
+      else if (user.role === "reseller") setLocation("/dashboard/reseller");
+      else setLocation("/dashboard/customer");
     } else {
-      setLocation("/dashboard/customer");
+      window.location.href = getLoginUrl();
     }
-    return null;
-  }
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Navigation */}
-      <nav className="border-b border-border/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+      <nav className="sticky top-0 z-50 border-b border-border/30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-accent rounded-lg flex items-center justify-center">
-              <span className="text-accent-foreground font-bold text-sm">AT</span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-accent-foreground font-bold">
+              AT
             </div>
-            <span className="font-bold text-lg">AppsTV</span>
+            <span className="text-xl font-bold">AppsTV</span>
           </div>
           <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              onClick={() => setLocation("/login")}
-              className="text-foreground hover:bg-accent/10"
-            >
-              Login
-            </Button>
-            <Button
-              onClick={() => setLocation("/register")}
-              className="bg-accent hover:bg-accent/90 text-accent-foreground"
-            >
-              Cadastro
-            </Button>
+            {isAuthenticated ? (
+              <Button onClick={handleGetStarted} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                Ir para Dashboard
+              </Button>
+            ) : (
+              <>
+                <Button
+                  variant="ghost"
+                  onClick={() => (window.location.href = getLoginUrl())}
+                  className="text-foreground hover:bg-accent/10"
+                >
+                  Login
+                </Button>
+                <Button
+                  onClick={() => setLocation("/register")}
+                  className="bg-accent hover:bg-accent/90 text-accent-foreground"
+                >
+                  Cadastro
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section className="container mx-auto px-4 py-20 md:py-32">
-        <div className="max-w-3xl mx-auto text-center">
-          <div className="inline-block mb-6 px-4 py-2 bg-accent/10 border border-accent/20 rounded-full">
-            <span className="text-sm font-semibold text-accent">Plataforma SaaS Profissional</span>
-          </div>
-
-          <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
-            Controle de Acesso ao AppsTV
-          </h1>
-
-          <p className="text-lg md:text-xl text-muted-foreground mb-8 leading-relaxed">
-            Plataforma elegante e segura para gerenciar assinaturas e códigos de ativação.
-            <br />
-            <span className="font-semibold text-foreground">Você fornece o conteúdo IPTV, nós gerenciamos o acesso.</span>
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-            <Button
-              size="lg"
-              onClick={() => setLocation("/register")}
-              className="bg-accent hover:bg-accent/90 text-accent-foreground text-base"
-            >
-              Começar Agora <ChevronRight className="ml-2 h-5 w-5" />
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={() => setLocation("/login")}
-              className="border-border hover:bg-accent/5 text-base"
-            >
-              Já tem conta?
-            </Button>
-          </div>
-
-          {/* Important Notice */}
-          <div className="bg-accent/5 border border-accent/20 rounded-lg p-6 mb-12">
-            <p className="text-sm font-semibold text-accent mb-2">⚠️ Aviso Importante</p>
-            <p className="text-foreground">
-              <strong>AppsTV não vende listas IPTV ou conteúdo de streaming.</strong> Você utiliza suas próprias listas IPTV dentro do aplicativo.
+      {/* Legal Notice Banner */}
+      <div className="border-b border-yellow-500/30 bg-yellow-500/10 px-4 py-3">
+        <div className="container flex items-start gap-3">
+          <AlertCircle className="h-5 w-5 flex-shrink-0 text-yellow-600 mt-0.5" />
+          <div className="text-sm text-yellow-900">
+            <p className="font-semibold">Aviso Importante:</p>
+            <p>
+              AppsTV é uma plataforma de gerenciamento de acesso. <strong>Você fornece o conteúdo IPTV, nós gerenciamos o acesso.</strong> Não vendemos listas IPTV ou conteúdo de streaming.
             </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Hero Section */}
+      <section className="relative overflow-hidden py-20 md:py-32">
+        {/* Background gradient effect */}
+        <div className="absolute inset-0 -z-10 opacity-30">
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-accent/20 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-secondary/20 rounded-full blur-3xl" />
+        </div>
+
+        <div className="container">
+          <div className="mx-auto max-w-3xl text-center">
+            <h1 className="text-5xl md:text-6xl font-bold tracking-tight mb-6">
+              Controle de Acesso ao <span className="bg-gradient-to-r from-accent via-secondary to-accent bg-clip-text text-transparent">AppsTV</span>
+            </h1>
+            <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
+              Plataforma elegante e segura para gerenciar assinaturas, códigos de ativação e acesso de clientes. Autenticação local, sem dependências externas.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button
+                onClick={handleGetStarted}
+                size="lg"
+                className="bg-accent hover:bg-accent/90 text-accent-foreground text-base px-8 h-12"
+              >
+                <Zap className="mr-2 h-5 w-5" />
+                Começar Agora
+              </Button>
+              <Button
+                onClick={() => setLocation("/register")}
+                variant="outline"
+                size="lg"
+                className="border-accent/50 text-foreground hover:bg-accent/10 text-base px-8 h-12"
+              >
+                Criar Conta
+              </Button>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="bg-card/50 border-t border-border/50 py-20">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-16">Funcionalidades Principais</h2>
+      {/* Features Grid */}
+      <section className="py-20 border-t border-border/30">
+        <div className="container">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold mb-4">Recursos Poderosos</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Tudo que você precisa para gerenciar assinaturas IPTV de forma profissional e segura
+            </p>
+          </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            {/* Feature 1 */}
-            <Card className="border-border/50 bg-background/50 backdrop-blur-sm p-8 hover:border-accent/50 transition-colors">
-              <div className="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center mb-6">
-                <Lock className="h-6 w-6 text-accent" />
-              </div>
-              <h3 className="text-xl font-bold mb-3">Autenticação Segura</h3>
-              <p className="text-muted-foreground">
-                Sistema de autenticação local com JWT. Sem dependências externas, totalmente independente.
-              </p>
-            </Card>
-
-            {/* Feature 2 */}
-            <Card className="border-border/50 bg-background/50 backdrop-blur-sm p-8 hover:border-accent/50 transition-colors">
-              <div className="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center mb-6">
-                <Zap className="h-6 w-6 text-accent" />
-              </div>
-              <h3 className="text-xl font-bold mb-3">Códigos de Ativação</h3>
-              <p className="text-muted-foreground">
-                Gere códigos com durações variáveis (30, 90, 180, 365 dias) e distribua para seus clientes.
-              </p>
-            </Card>
-
-            {/* Feature 3 */}
-            <Card className="border-border/50 bg-background/50 backdrop-blur-sm p-8 hover:border-accent/50 transition-colors">
-              <div className="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center mb-6">
-                <Users className="h-6 w-6 text-accent" />
-              </div>
-              <h3 className="text-xl font-bold mb-3">Hierarquia de Usuários</h3>
-              <p className="text-muted-foreground">
-                Admin, Revendedor e Cliente com permissões específicas e dashboards personalizados.
-              </p>
-            </Card>
-
-            {/* Feature 4 */}
-            <Card className="border-border/50 bg-background/50 backdrop-blur-sm p-8 hover:border-accent/50 transition-colors">
-              <div className="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center mb-6">
-                <BarChart3 className="h-6 w-6 text-accent" />
-              </div>
-              <h3 className="text-xl font-bold mb-3">Estatísticas em Tempo Real</h3>
-              <p className="text-muted-foreground">
-                Acompanhe créditos, ativações, clientes e receita em dashboards intuitivos.
-              </p>
-            </Card>
-
-            {/* Feature 5 */}
-            <Card className="border-border/50 bg-background/50 backdrop-blur-sm p-8 hover:border-accent/50 transition-colors">
-              <div className="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center mb-6">
-                <Shield className="h-6 w-6 text-accent" />
-              </div>
-              <h3 className="text-xl font-bold mb-3">API para Smart TV</h3>
-              <p className="text-muted-foreground">
-                Integre com seu aplicativo Smart TV para validar códigos e verificar assinaturas.
-              </p>
-            </Card>
-
-            {/* Feature 6 */}
-            <Card className="border-border/50 bg-background/50 backdrop-blur-sm p-8 hover:border-accent/50 transition-colors">
-              <div className="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center mb-6">
-                <Zap className="h-6 w-6 text-accent" />
-              </div>
-              <h3 className="text-xl font-bold mb-3">100% Independente</h3>
-              <p className="text-muted-foreground">
-                Sem OAuth externo, sem e-mail, sem Stripe. Tudo gerenciado internamente.
-              </p>
-            </Card>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              {
+                icon: Lock,
+                title: "Autenticação JWT",
+                description: "Sistema de login seguro com autenticação JWT local, sem OAuth externo",
+              },
+              {
+                icon: Users,
+                title: "Hierarquia de Usuários",
+                description: "Admin, Revendedor e Cliente com permissões específicas e controladas",
+              },
+              {
+                icon: Zap,
+                title: "Códigos de Ativação",
+                description: "Geração de códigos com múltiplas durações (30, 90, 180, 365 dias)",
+              },
+              {
+                icon: BarChart3,
+                title: "Sistema de Créditos",
+                description: "Gerenciamento completo de créditos para revendedores com histórico",
+              },
+              {
+                icon: Smartphone,
+                title: "API para Smart TV",
+                description: "Validação de códigos e verificação de status para aplicativos",
+              },
+              {
+                icon: Shield,
+                title: "100% Independente",
+                description: "Sem e-mail, sem Stripe, sem dependências de serviços externos",
+              },
+              {
+                icon: Cpu,
+                title: "Banco de Dados Robusto",
+                description: "MySQL com schema completo e relacionamentos bem definidos",
+              },
+              {
+                icon: BarChart3,
+                title: "Dashboards Personalizados",
+                description: "Interfaces específicas para cada tipo de usuário e necessidade",
+              },
+            ].map((feature, i) => (
+              <Card key={i} className="p-6 border-border/50 hover:border-accent/50 transition-colors group">
+                <feature.icon className="h-8 w-8 text-accent mb-4 group-hover:scale-110 transition-transform" />
+                <h3 className="font-semibold text-lg mb-2">{feature.title}</h3>
+                <p className="text-sm text-muted-foreground">{feature.description}</p>
+              </Card>
+            ))}
           </div>
         </div>
       </section>
 
       {/* How It Works */}
-      <section className="container mx-auto px-4 py-20">
-        <h2 className="text-3xl md:text-4xl font-bold text-center mb-16">Como Funciona</h2>
-
-        <div className="max-w-3xl mx-auto space-y-8">
-          {/* Step 1 */}
-          <div className="flex gap-6">
-            <div className="flex-shrink-0">
-              <div className="w-12 h-12 bg-accent text-accent-foreground rounded-full flex items-center justify-center font-bold text-lg">
-                1
-              </div>
-            </div>
-            <div>
-              <h3 className="text-xl font-bold mb-2">Crie sua Conta</h3>
-              <p className="text-muted-foreground">
-                Registre-se como Revendedor ou Cliente. Sem necessidade de e-mail ou verificação externa.
-              </p>
-            </div>
+      <section className="py-20 border-t border-border/30 bg-card/50">
+        <div className="container">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold mb-4">Como Funciona</h2>
+            <p className="text-lg text-muted-foreground">Três passos simples para começar</p>
           </div>
 
-          {/* Step 2 */}
-          <div className="flex gap-6">
-            <div className="flex-shrink-0">
-              <div className="w-12 h-12 bg-accent text-accent-foreground rounded-full flex items-center justify-center font-bold text-lg">
-                2
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                step: "01",
+                title: "Registre-se",
+                description: "Crie sua conta como Admin, Revendedor ou Cliente com autenticação segura",
+              },
+              {
+                step: "02",
+                title: "Gerencie Códigos",
+                description: "Gere códigos de ativação com durações personalizadas para seus clientes",
+              },
+              {
+                step: "03",
+                title: "Ative Assinaturas",
+                description: "Clientes ativam códigos e gerenciam seus dispositivos e assinaturas",
+              },
+            ].map((item, i) => (
+              <div key={i} className="relative">
+                <div className="flex flex-col items-center text-center">
+                  <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-accent/20 border-2 border-accent">
+                    <span className="text-2xl font-bold text-accent">{item.step}</span>
+                  </div>
+                  <h3 className="text-xl font-semibold mb-3">{item.title}</h3>
+                  <p className="text-muted-foreground">{item.description}</p>
+                </div>
+                {i < 2 && (
+                  <div className="hidden md:block absolute top-8 -right-4 w-8 h-1 bg-gradient-to-r from-accent to-transparent" />
+                )}
               </div>
-            </div>
-            <div>
-              <h3 className="text-xl font-bold mb-2">Gere Códigos de Ativação</h3>
-              <p className="text-muted-foreground">
-                Como Revendedor, gere códigos com durações variáveis e distribua para seus clientes.
-              </p>
-            </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Compatibility Section */}
+      <section className="py-20 border-t border-border/30">
+        <div className="container">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold mb-4">Compatibilidade</h2>
+            <p className="text-lg text-muted-foreground">Funciona em qualquer dispositivo</p>
           </div>
 
-          {/* Step 3 */}
-          <div className="flex gap-6">
-            <div className="flex-shrink-0">
-              <div className="w-12 h-12 bg-accent text-accent-foreground rounded-full flex items-center justify-center font-bold text-lg">
-                3
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              "Samsung TV",
+              "LG TV",
+              "Android TV",
+              "Amazon Fire TV",
+              "Google TV",
+              "VIDAA OS",
+              "WebOS",
+              "Aplicativos Customizados",
+            ].map((device, i) => (
+              <div key={i} className="p-4 border border-border/50 rounded-lg text-center hover:border-accent/50 transition-colors">
+                <Smartphone className="h-6 w-6 mx-auto mb-2 text-accent" />
+                <p className="font-medium">{device}</p>
               </div>
-            </div>
-            <div>
-              <h3 className="text-xl font-bold mb-2">Ative no Aplicativo</h3>
-              <p className="text-muted-foreground">
-                Clientes inserem o código no aplicativo AppsTV para liberar acesso por 1 ano.
-              </p>
-            </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="py-20 border-t border-border/30 bg-card/50">
+        <div className="container">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold mb-4">Perguntas Frequentes</h2>
           </div>
 
-          {/* Step 4 */}
-          <div className="flex gap-6">
-            <div className="flex-shrink-0">
-              <div className="w-12 h-12 bg-accent text-accent-foreground rounded-full flex items-center justify-center font-bold text-lg">
-                4
+          <div className="max-w-3xl mx-auto space-y-4">
+            {[
+              {
+                q: "AppsTV vende listas IPTV?",
+                a: "Não. AppsTV é uma plataforma de gerenciamento de acesso. Você fornece suas próprias listas IPTV, e nós gerenciamos o acesso e as assinaturas.",
+              },
+              {
+                q: "Preciso de e-mail para usar?",
+                a: "Não. O sistema usa autenticação JWT local com usuário e senha. Sem e-mail, sem OAuth externo.",
+              },
+              {
+                q: "Posso usar com meu próprio conteúdo?",
+                a: "Sim. AppsTV é totalmente independente. Você usa suas próprias listas IPTV e conteúdo dentro do aplicativo.",
+              },
+              {
+                q: "Qual é a hierarquia de usuários?",
+                a: "Admin (controla tudo), Revendedor (gerencia créditos e códigos) e Cliente (ativa códigos e gerencia dispositivos).",
+              },
+            ].map((item, i) => (
+              <div key={i} className="p-6 border border-border/50 rounded-lg hover:border-accent/50 transition-colors">
+                <h3 className="font-semibold text-lg mb-2">{item.q}</h3>
+                <p className="text-muted-foreground">{item.a}</p>
               </div>
-            </div>
-            <div>
-              <h3 className="text-xl font-bold mb-2">Adicione sua Lista IPTV</h3>
-              <p className="text-muted-foreground">
-                Clientes adicionam suas próprias listas IPTV no aplicativo e começam a assistir.
-              </p>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="bg-accent/10 border-t border-border/50 py-16">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">Pronto para Começar?</h2>
-          <p className="text-lg text-muted-foreground mb-8">
-            Crie sua conta agora e comece a gerenciar suas assinaturas.
-          </p>
-          <Button
-            size="lg"
-            onClick={() => setLocation("/register")}
-            className="bg-accent hover:bg-accent/90 text-accent-foreground text-base"
-          >
-            Cadastre-se Agora <ChevronRight className="ml-2 h-5 w-5" />
-          </Button>
+      <section className="py-20 border-t border-border/30">
+        <div className="container">
+          <div className="max-w-2xl mx-auto text-center">
+            <h2 className="text-4xl font-bold mb-6">Pronto para Começar?</h2>
+            <p className="text-lg text-muted-foreground mb-8">
+              Crie sua conta agora e comece a gerenciar suas assinaturas IPTV de forma profissional
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button
+                onClick={handleGetStarted}
+                size="lg"
+                className="bg-accent hover:bg-accent/90 text-accent-foreground text-base px-8 h-12"
+              >
+                <Zap className="mr-2 h-5 w-5" />
+                Começar Agora
+              </Button>
+              <Button
+                onClick={() => setLocation("/register")}
+                variant="outline"
+                size="lg"
+                className="border-accent/50 text-foreground hover:bg-accent/10 text-base px-8 h-12"
+              >
+                Criar Conta
+              </Button>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border/50 bg-card/30 py-8">
-        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>&copy; 2026 AppsTV. Todos os direitos reservados.</p>
-          <p className="mt-2">
-            <strong>Aviso:</strong> AppsTV não vende conteúdo IPTV. Você fornece o conteúdo, nós gerenciamos o acesso.
-          </p>
+      <footer className="border-t border-border/30 bg-card/50 py-12">
+        <div className="container">
+          <div className="grid md:grid-cols-4 gap-8 mb-8">
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-accent-foreground font-bold">
+                  AT
+                </div>
+                <span className="font-bold">AppsTV</span>
+              </div>
+              <p className="text-sm text-muted-foreground">Gerenciamento de acesso IPTV elegante e seguro</p>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-4">Produto</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><a href="#" className="hover:text-foreground transition">Features</a></li>
+                <li><a href="#" className="hover:text-foreground transition">Preços</a></li>
+                <li><a href="#" className="hover:text-foreground transition">Documentação</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-4">Empresa</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><a href="#" className="hover:text-foreground transition">Sobre</a></li>
+                <li><a href="#" className="hover:text-foreground transition">Blog</a></li>
+                <li><a href="#" className="hover:text-foreground transition">Contato</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-4">Legal</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><a href="#" className="hover:text-foreground transition">Termos</a></li>
+                <li><a href="#" className="hover:text-foreground transition">Privacidade</a></li>
+                <li><a href="#" className="hover:text-foreground transition">DMCA</a></li>
+              </ul>
+            </div>
+          </div>
+          <div className="border-t border-border/30 pt-8 text-center text-sm text-muted-foreground">
+            <p>&copy; 2026 AppsTV. Todos os direitos reservados.</p>
+          </div>
         </div>
       </footer>
     </div>

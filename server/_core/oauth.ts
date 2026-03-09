@@ -2,52 +2,109 @@ import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import type { Express, Request, Response } from "express";
 import * as db from "../db";
 import { getSessionCookieOptions } from "./cookies";
-import { sdk } from "./sdk";
+import { hashPassword, createToken } from "../auth";
+import { z } from "zod";
 
-function getQueryParam(req: Request, key: string): string | undefined {
-  const value = req.query[key];
-  return typeof value === "string" ? value : undefined;
-}
-
+/**
+ * JWT local auth routes - no OAuth
+ */
 export function registerOAuthRoutes(app: Express) {
-  app.get("/api/oauth/callback", async (req: Request, res: Response) => {
-    const code = getQueryParam(req, "code");
-    const state = getQueryParam(req, "state");
-
-    if (!code || !state) {
-      res.status(400).json({ error: "code and state are required" });
-      return;
-    }
-
+  // Register endpoint
+  app.post("/api/auth/register", async (req: Request, res: Response) => {
     try {
-      const tokenResponse = await sdk.exchangeCodeForToken(code, state);
-      const userInfo = await sdk.getUserInfo(tokenResponse.accessToken);
+      const schema = z.object({
+        username: z.string().min(3).max(64),
+        password: z.string().min(6),
+        name: z.string().min(1).max(255),
+        role: z.enum(["reseller", "customer"]).default("customer"),
+      });
 
-      if (!userInfo.openId) {
-        res.status(400).json({ error: "openId missing from user info" });
+      const body = schema.parse(req.body);
+
+      // Check if username already exists
+      const existingUser = await db.getUserByUsername(body.username);
+      if (existingUser) {
+        res.status(400).json({ error: "Username already exists" });
         return;
       }
 
-      await db.upsertUser({
-        openId: userInfo.openId,
-        name: userInfo.name || null,
-        email: userInfo.email ?? null,
-        loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
-        lastSignedIn: new Date(),
+      // Hash password and create user
+      const passwordHash = await hashPassword(body.password);
+      const user = await db.createUser({
+        username: body.username,
+        passwordHash,
+        name: body.name,
+        role: body.role,
+        status: "active",
       });
 
-      const sessionToken = await sdk.createSessionToken(userInfo.openId, {
-        name: userInfo.name || "",
-        expiresInMs: ONE_YEAR_MS,
-      });
+      // If registering as reseller, create reseller profile
+      if (body.role === "reseller") {
+        await db.createReseller({
+          userId: user.id,
+          companyName: body.name,
+          creditBalance: "0",
+          totalCreditsUsed: "0",
+          status: "active",
+        });
+      }
 
+      // Create JWT token
+      const token = await createToken(user);
+
+      // Set cookie
       const cookieOptions = getSessionCookieOptions(req);
-      res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+      res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: ONE_YEAR_MS });
 
-      res.redirect(302, "/");
+      res.json({ success: true, user: { id: user.id, username: user.username, role: user.role } });
     } catch (error) {
-      console.error("[OAuth] Callback failed", error);
-      res.status(500).json({ error: "OAuth callback failed" });
+      console.error("[Auth] Register failed:", error);
+      res.status(500).json({ error: "Registration failed" });
+    }
+  });
+
+  // Login endpoint
+  app.post("/api/auth/login", async (req: Request, res: Response) => {
+    try {
+      const schema = z.object({
+        username: z.string(),
+        password: z.string(),
+      });
+
+      const body = schema.parse(req.body);
+
+      // Find user by username
+      const user = await db.getUserByUsername(body.username);
+      if (!user) {
+        res.status(401).json({ error: "Invalid credentials" });
+        return;
+      }
+
+      // Check if user is active
+      if (user.status !== "active") {
+        res.status(403).json({ error: "User account is not active" });
+        return;
+      }
+
+      // Verify password
+      const { verifyPassword } = await import("../auth");
+      const isValid = await verifyPassword(body.password, user.passwordHash);
+      if (!isValid) {
+        res.status(401).json({ error: "Invalid credentials" });
+        return;
+      }
+
+      // Create JWT token
+      const token = await createToken(user);
+
+      // Set cookie
+      const cookieOptions = getSessionCookieOptions(req);
+      res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+
+      res.json({ success: true, user: { id: user.id, username: user.username, role: user.role } });
+    } catch (error) {
+      console.error("[Auth] Login failed:", error);
+      res.status(500).json({ error: "Login failed" });
     }
   });
 }

@@ -1,7 +1,7 @@
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
-import { ENV } from './_core/env';
+import { InsertUser, users, resellers, creditTransactions, activationCodes, subscriptions, devices } from "../drizzle/schema";
+import type { User, Reseller, CreditTransaction, ActivationCode, Subscription, Device } from "../drizzle/schema";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -18,75 +18,191 @@ export async function getDb() {
   return _db;
 }
 
-export async function upsertUser(user: InsertUser): Promise<void> {
-  if (!user.openId) {
-    throw new Error("User openId is required for upsert");
-  }
+// ===== USER QUERIES =====
 
+export async function createUser(user: InsertUser): Promise<User> {
   const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot upsert user: database not available");
-    return;
-  }
+  if (!db) throw new Error("Database not available");
 
-  try {
-    const values: InsertUser = {
-      openId: user.openId,
-    };
-    const updateSet: Record<string, unknown> = {};
-
-    const textFields = ["name", "email", "loginMethod"] as const;
-    type TextField = (typeof textFields)[number];
-
-    const assignNullable = (field: TextField) => {
-      const value = user[field];
-      if (value === undefined) return;
-      const normalized = value ?? null;
-      values[field] = normalized;
-      updateSet[field] = normalized;
-    };
-
-    textFields.forEach(assignNullable);
-
-    if (user.lastSignedIn !== undefined) {
-      values.lastSignedIn = user.lastSignedIn;
-      updateSet.lastSignedIn = user.lastSignedIn;
-    }
-    if (user.role !== undefined) {
-      values.role = user.role;
-      updateSet.role = user.role;
-    } else if (user.openId === ENV.ownerOpenId) {
-      values.role = 'admin';
-      updateSet.role = 'admin';
-    }
-
-    if (!values.lastSignedIn) {
-      values.lastSignedIn = new Date();
-    }
-
-    if (Object.keys(updateSet).length === 0) {
-      updateSet.lastSignedIn = new Date();
-    }
-
-    await db.insert(users).values(values).onDuplicateKeyUpdate({
-      set: updateSet,
-    });
-  } catch (error) {
-    console.error("[Database] Failed to upsert user:", error);
-    throw error;
-  }
+  const result = await db.insert(users).values(user);
+  const newUser = await db.select().from(users).where(eq(users.id, result[0].insertId as number)).limit(1);
+  return newUser[0]!;
 }
 
-export async function getUserByOpenId(openId: string) {
+export async function getUserByUsername(username: string): Promise<User | undefined> {
   const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get user: database not available");
-    return undefined;
-  }
+  if (!db) return undefined;
 
-  const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
-
+  const result = await db.select().from(users).where(eq(users.username, username)).limit(1);
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+export async function getUserById(id: number): Promise<User | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getAllUsers(): Promise<User[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(users);
+}
+
+export async function updateUserStatus(userId: number, status: "active" | "inactive" | "blocked"): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(users).set({ status }).where(eq(users.id, userId));
+}
+
+// ===== RESELLER QUERIES =====
+
+export async function createReseller(reseller: any): Promise<Reseller> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.insert(resellers).values(reseller);
+  const newReseller = await db.select().from(resellers).where(eq(resellers.userId, reseller.userId)).limit(1);
+  return newReseller[0]!;
+}
+
+export async function getResellerByUserId(userId: number): Promise<Reseller | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select().from(resellers).where(eq(resellers.userId, userId)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getResellerById(id: number): Promise<Reseller | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select().from(resellers).where(eq(resellers.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getAllResellers(): Promise<Reseller[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(resellers);
+}
+
+export async function updateResellerCredits(resellerId: number, amount: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const reseller = await getResellerById(resellerId);
+  if (!reseller) throw new Error("Reseller not found");
+
+  const newBalance = parseFloat(reseller.creditBalance.toString()) + amount;
+  await db.update(resellers).set({ creditBalance: newBalance.toString() }).where(eq(resellers.id, resellerId));
+}
+
+// ===== CREDIT TRANSACTION QUERIES =====
+
+export async function createCreditTransaction(transaction: Omit<CreditTransaction, 'id' | 'createdAt'>): Promise<CreditTransaction> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.insert(creditTransactions).values(transaction);
+  const newTransaction = await db.select().from(creditTransactions).where(eq(creditTransactions.resellerId, transaction.resellerId)).orderBy(creditTransactions.createdAt).limit(1);
+  return newTransaction[0]!;
+}
+
+export async function getCreditTransactionsByResellerId(resellerId: number): Promise<CreditTransaction[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(creditTransactions).where(eq(creditTransactions.resellerId, resellerId));
+}
+
+// ===== ACTIVATION CODE QUERIES =====
+
+export async function createActivationCode(code: Omit<ActivationCode, 'id' | 'createdAt'>): Promise<ActivationCode> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.insert(activationCodes).values(code);
+  const newCode = await db.select().from(activationCodes).where(eq(activationCodes.code, code.code)).limit(1);
+  return newCode[0]!;
+}
+
+export async function getActivationCodeByCode(code: string): Promise<ActivationCode | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select().from(activationCodes).where(eq(activationCodes.code, code)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getActivationCodesByResellerId(resellerId: number): Promise<ActivationCode[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(activationCodes).where(eq(activationCodes.resellerId, resellerId));
+}
+
+export async function updateActivationCodeStatus(codeId: number, status: "available" | "activated" | "expired", customerId?: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const updates: any = { status };
+  if (customerId !== undefined) {
+    updates.customerId = customerId;
+    updates.activatedAt = new Date();
+  }
+
+  await db.update(activationCodes).set(updates).where(eq(activationCodes.id, codeId));
+}
+
+// ===== SUBSCRIPTION QUERIES =====
+
+export async function createSubscription(subscription: Omit<Subscription, 'id' | 'createdAt' | 'updatedAt'>): Promise<Subscription> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.insert(subscriptions).values(subscription);
+  const newSubscription = await db.select().from(subscriptions).where(eq(subscriptions.customerId, subscription.customerId)).limit(1);
+  return newSubscription[0]!;
+}
+
+export async function getSubscriptionsByCustomerId(customerId: number): Promise<Subscription[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(subscriptions).where(eq(subscriptions.customerId, customerId));
+}
+
+export async function getActiveSubscriptionByCustomerId(customerId: number): Promise<Subscription | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select().from(subscriptions).where(
+    and(eq(subscriptions.customerId, customerId), eq(subscriptions.status, "active"))
+  ).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+// ===== DEVICE QUERIES =====
+
+export async function createDevice(device: Omit<Device, 'id' | 'createdAt'>): Promise<Device> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.insert(devices).values(device);
+  const newDevice = await db.select().from(devices).where(eq(devices.deviceId, device.deviceId)).limit(1);
+  return newDevice[0]!;
+}
+
+export async function getDevicesBySubscriptionId(subscriptionId: number): Promise<Device[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(devices).where(eq(devices.subscriptionId, subscriptionId));
+}

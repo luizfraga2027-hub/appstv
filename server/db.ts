@@ -1,7 +1,7 @@
 import { eq, and } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, resellers, creditTransactions, activationCodes, subscriptions, devices } from "../drizzle/schema";
-import type { User, Reseller, CreditTransaction, ActivationCode, Subscription, Device } from "../drizzle/schema";
+import { InsertUser, users, resellers, creditTransactions, activationCodes, subscriptions, devices, applications, macActivations, accessLogs, customers } from "../drizzle/schema";
+import type { User, Reseller, CreditTransaction, ActivationCode, Subscription, Device, Application, InsertApplication, MacActivation, InsertMacActivation, AccessLog, InsertAccessLog, Customer } from "../drizzle/schema";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -277,4 +277,93 @@ export async function getSubscriptionByCodeId(codeId: number) {
 
   const result = await db.select().from(subscriptions).where(eq(subscriptions.activationCodeId, codeId)).limit(1);
   return result.length > 0 ? result[0] : undefined;
+}
+
+
+// ===== APPLICATIONS =====
+
+export async function createApplication(data: InsertApplication) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(applications).values(data);
+  return result;
+}
+
+export async function getAllApplications() {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(applications).where(eq(applications.status, "active"));
+}
+
+export async function getApplicationById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select().from(applications).where(eq(applications.id, id)).limit(1);
+  return result[0];
+}
+
+export async function updateApplication(id: number, data: Partial<Application>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(applications).set(data).where(eq(applications.id, id));
+}
+
+export async function deleteApplication(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.delete(applications).where(eq(applications.id, id));
+}
+
+// ===== MAC ACTIVATIONS =====
+
+export async function createMacActivation(data: InsertMacActivation) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(macActivations).values(data);
+  return result;
+}
+
+export async function getMacActivationByMacId(macId: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select().from(macActivations).where(eq(macActivations.macId, macId)).limit(1);
+  return result[0];
+}
+
+export async function getMacActivationsByResellerId(resellerId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(macActivations).where(eq(macActivations.resellerId, resellerId));
+}
+
+export async function updateMacActivation(id: number, data: Partial<MacActivation>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(macActivations).set(data).where(eq(macActivations.id, id));
+}
+
+// ===== ACCESS LOGS =====
+
+export async function createAccessLog(data: InsertAccessLog) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(accessLogs).values(data);
+  return result;
+}
+
+export async function getAccessLogsByMacId(macId: string) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(accessLogs).where(eq(accessLogs.macId, macId));
 }

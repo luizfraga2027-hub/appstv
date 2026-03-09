@@ -189,3 +189,85 @@ export const customersRelations = relations(customers, ({ one }) => ({
     references: [resellers.id],
   }),
 }));
+
+/**
+ * Applications - Aplicativos disponíveis no sistema
+ */
+export const applications = mysqlTable("applications", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  code: varchar("code", { length: 64 }).notNull().unique(),
+  version: varchar("version", { length: 32 }).notNull(),
+  description: text("description"),
+  status: mysqlEnum("status", ["active", "inactive", "deprecated"]).default("active").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Application = typeof applications.$inferSelect;
+export type InsertApplication = typeof applications.$inferInsert;
+
+/**
+ * MAC Activations - Ativações de MAC ID por revendedor
+ */
+export const macActivations = mysqlTable("macActivations", {
+  id: int("id").autoincrement().primaryKey(),
+  resellerId: int("resellerId").notNull(),
+  customerId: int("customerId"),
+  applicationId: int("applicationId").notNull(),
+  macId: varchar("macId", { length: 255 }).notNull().unique(),
+  iptvListUrl: text("iptvListUrl"),
+  dns1: varchar("dns1", { length: 255 }),
+  dns2: varchar("dns2", { length: 255 }),
+  dns3: varchar("dns3", { length: 255 }),
+  status: mysqlEnum("status", ["active", "expired", "blocked"]).default("active").notNull(),
+  activatedAt: timestamp("activatedAt").defaultNow().notNull(),
+  expirationDate: timestamp("expirationDate").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type MacActivation = typeof macActivations.$inferSelect;
+export type InsertMacActivation = typeof macActivations.$inferInsert;
+
+/**
+ * Access Logs - Logs de acesso ao sistema
+ */
+export const accessLogs = mysqlTable("accessLogs", {
+  id: int("id").autoincrement().primaryKey(),
+  macId: varchar("macId", { length: 255 }).notNull(),
+  ipAddress: varchar("ipAddress", { length: 45 }).notNull(),
+  applicationId: int("applicationId").notNull(),
+  status: mysqlEnum("status", ["success", "failed", "blocked"]).notNull(),
+  errorMessage: text("errorMessage"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type AccessLog = typeof accessLogs.$inferSelect;
+export type InsertAccessLog = typeof accessLogs.$inferInsert;
+
+/**
+ * Relations for new tables
+ */
+export const applicationsRelations = relations(applications, ({ many }) => ({
+  macActivations: many(macActivations),
+  accessLogs: many(accessLogs),
+}));
+
+export const macActivationsRelations = relations(macActivations, ({ one }) => ({
+  reseller: one(resellers, {
+    fields: [macActivations.resellerId],
+    references: [resellers.id],
+  }),
+  application: one(applications, {
+    fields: [macActivations.applicationId],
+    references: [applications.id],
+  }),
+}));
+
+export const accessLogsRelations = relations(accessLogs, ({ one }) => ({
+  application: one(applications, {
+    fields: [accessLogs.applicationId],
+    references: [applications.id],
+  }),
+}));

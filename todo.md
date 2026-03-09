@@ -143,3 +143,111 @@
 - [x] Isolamento de painéis: revendedor vê apenas seus dados
 - [x] Admin pode configurar preço de código por revendedor
 - [ ] Clientes aparecem no painel do revendedor após usar código
+
+
+## FASE 15: Correções e Novas Funcionalidades Completas
+
+### 1. Correção de Erro 404
+- [x] Corrigir rotas para Page 2 do painel de usuário
+- [x] Corrigir rotas para Page 2 do painel de revendedor
+- [ ] Implementar paginação no painel do usuário
+- [ ] Implementar paginação no painel do revendedor
+- [ ] Implementar paginação na listagem de clientes
+- [ ] Implementar paginação na listagem de códigos
+- [ ] Implementar paginação na listagem de ativações
+
+### 2. Campo de Lista IPTV no Painel do Cliente
+- [x] Adicionar campo de URL M3U no painel do cliente
+- [x] Implementar salvamento de lista IPTV
+- [x] Vincular lista IPTV à assinatura do cliente
+
+### 3. Ativação por MAC ID (Revendedor com Sistema de Créditos)
+- [x] Criar tabela de ativações com MAC ID
+- [x] Implementar fluxo de ativação por MAC ID
+- [x] Verificar créditos disponíveis antes de ativar
+- [x] Descontar 1 crédito por ativação
+- [x] Registrar MAC ID, lista IPTV, aplicativo, DNS, data de ativação/expiração
+- [x] Implementar validação de MAC duplicado
+- [ ] Implementar limite de 1 dispositivo por cliente
+
+### 4. Painel de Clientes Ativados
+- [ ] Criar página "Clientes Ativados" no painel do revendedor
+- [ ] Exibir tabela com: MAC ID, Aplicativo, Lista IPTV, DNS, Data ativação, Data expiração, Status
+
+### 5. Contador de Usuários Ativos
+- [ ] Mostrar total de usuários ativos
+- [ ] Mostrar total de usuários expirados
+- [ ] Mostrar total de conexões usadas
+- [ ] Para plano mensal: mostrar conexões disponíveis e em uso
+
+### 6. Revendedor com Plano Mensal
+- [ ] Implementar tipo de plano (créditos vs mensal)
+- [ ] Gerar código especial de ativação para plano mensal
+- [ ] Definir limite de conexões simultâneas
+
+### 7. Tabela de Preços para Revendedores
+- [ ] Criar seção "Tabela de preços" no painel do revendedor
+- [ ] Exibir aplicativos disponíveis
+- [ ] Exibir preço por ativação
+- [ ] Exibir planos disponíveis
+
+### 8. Sistema de Aplicativos
+- [x] Criar tabela de aplicativos
+- [x] Campos: Nome, Versão, Descrição, Status, Código único
+- [x] Implementar CRUD de aplicativos no admin
+
+### 9. Controle de Aplicativo por Revendedor
+- [ ] Admin define quais apps cada revendedor pode usar
+- [ ] Painel do revendedor mostra apenas apps liberados
+
+### 10. Controle de Revendedor (Admin)
+- [ ] Admin pode ativar/desativar revendedor
+- [ ] Admin pode bloquear revendedor
+- [ ] Admin pode deletar revendedor
+- [ ] Admin define quantidade de apps permitidos
+- [ ] Admin define quais apps o revendedor pode usar
+
+### 11. Gerenciamento de Aplicativos (Admin)
+- [x] Criar aplicativos
+- [ ] Editar aplicativos
+- [x] Excluir aplicativos
+
+### 12. DNS do Revendedor
+- [x] Revendedor mensal pode adicionar DNS 1, 2, 3
+- [x] DNS são utilizadas pelos clientes do revendedor
+
+### 13. Criação de Código pelo Revendedor
+- [x] Botão "Criar código de ativação" no painel do revendedor
+- [ ] Revendedor escolhe: Aplicativo, Quantidade de DNS
+- [x] Sistema gera código de 10 números automaticamente
+
+### 14. API para Smart TV
+- [x] POST /api/app/activate
+- [x] POST /api/app/validate
+- [x] POST /api/app/check
+- [x] Validar MAC ID
+- [x] Validar assinatura ativa
+- [x] Retornar lista IPTV salva
+- [x] Retornar DNS configurada
+- [x] Verificar data de expiração
+
+### 15. Sistema de Validação de MAC
+- [x] Verificar se MAC está ativo
+- [x] Verificar se assinatura está válida
+- [x] Retornar configurações do cliente
+
+### 16. Anti Compartilhamento de Lista
+- [ ] Detectar mesma lista IPTV em múltiplos MACs
+- [ ] Bloquear acesso se detectado
+- [ ] Registrar evento nos logs
+
+### 17. Controle de DNS
+- [x] Registrar DNS utilizada em cada ativação
+- [x] Usar DNS do revendedor ou do sistema
+
+### 18. Logs de Acesso
+- [x] Registrar MAC ID
+- [x] Registrar IP do dispositivo
+- [x] Registrar data e hora do acesso
+- [x] Registrar aplicativo utilizado
+- [x] Registrar status da validação

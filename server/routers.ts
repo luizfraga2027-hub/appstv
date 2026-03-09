@@ -413,6 +413,100 @@ const smartTvRouter = router({
     }),
 });
 
+// ===== APPLICATIONS ROUTER =====
+
+const applicationsRouter = router({
+  createApp: adminProcedure
+    .input(
+      z.object({
+        name: z.string().min(1),
+        code: z.string().min(1),
+        version: z.string().min(1),
+        description: z.string().optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      await db.createApplication({
+        name: input.name,
+        code: input.code,
+        version: input.version,
+        description: input.description,
+        status: "active",
+      });
+      return { success: true };
+    }),
+
+  listApps: publicProcedure.query(async () => {
+    return db.getAllApplications();
+  }),
+
+  deleteApp: adminProcedure
+    .input(z.object({ appId: z.number() }))
+    .mutation(async ({ input }) => {
+      await db.deleteApplication(input.appId);
+      return { success: true };
+    }),
+});
+
+// ===== MAC ACTIVATIONS ROUTER =====
+
+const macActivationsRouter = router({
+  activateMac: resellerProcedure
+    .input(
+      z.object({
+        macId: z.string(),
+        applicationId: z.number(),
+        iptvListUrl: z.string().optional(),
+        dns1: z.string().optional(),
+        dns2: z.string().optional(),
+        dns3: z.string().optional(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const reseller = await db.getResellerByUserId(ctx.user!.id);
+      if (!reseller) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Reseller not found" });
+      }
+
+      const existingMac = await db.getMacActivationByMacId(input.macId);
+      if (existingMac) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "MAC ID já ativado no sistema" });
+      }
+
+      if (parseFloat(reseller.creditBalance.toString()) < 1) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Créditos insuficientes para ativar este cliente" });
+      }
+
+      await db.updateResellerCredits(reseller.id, -1);
+
+      const expirationDate = new Date();
+      expirationDate.setFullYear(expirationDate.getFullYear() + 1);
+
+      await db.createMacActivation({
+        resellerId: reseller.id,
+        applicationId: input.applicationId,
+        macId: input.macId,
+        iptvListUrl: input.iptvListUrl,
+        dns1: input.dns1,
+        dns2: input.dns2,
+        dns3: input.dns3,
+        status: "active",
+        expirationDate,
+      });
+
+      return { success: true };
+    }),
+
+  listMacActivations: resellerProcedure.query(async ({ ctx }) => {
+    const reseller = await db.getResellerByUserId(ctx.user!.id);
+    if (!reseller) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Reseller not found" });
+    }
+
+    return db.getMacActivationsByResellerId(reseller.id);
+  }),
+});
+
 // ===== IPTV ROUTER =====
 
 const iptvRouter = router({
@@ -466,6 +560,8 @@ export const appRouter = router({
   admin: adminRouter,
   smartTv: smartTvRouter,
   iptv: iptvRouter,
+  applications: applicationsRouter,
+  macActivations: macActivationsRouter,
 });
 
 export type AppRouter = typeof appRouter;

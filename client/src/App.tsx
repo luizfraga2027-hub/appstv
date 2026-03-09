@@ -11,6 +11,8 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminLogin from "./pages/AdminLogin";
 import ResellerDashboard from "./pages/ResellerDashboard";
 import CustomerDashboard from "./pages/CustomerDashboard";
+import ResellerIptvPage from "./pages/ResellerIptvPage";
+import CustomerIptvPage from "./pages/CustomerIptvPage";
 import { useAuth } from "./_core/hooks/useAuth";
 
 function ProtectedAdminRoute({ component: Component }: { component: React.ComponentType }) {
@@ -32,7 +34,9 @@ function Router() {
       <Route path={"/admin/login"} component={AdminLogin} />
       <Route path={"/admin"} component={() => <ProtectedAdminRoute component={AdminDashboard} />} />
       <Route path={"/dashboard/reseller"} component={ResellerDashboard} />
+      <Route path={"/dashboard/reseller/iptv"} component={ResellerIptvPage} />
       <Route path={"/dashboard/customer"} component={CustomerDashboard} />
+      <Route path={"/dashboard/customer/iptv"} component={CustomerIptvPage} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

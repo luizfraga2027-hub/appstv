@@ -120,3 +120,11 @@
 - [x] Auditar e remover qualquer serviço externo
 - [x] Testar login/registro com apenas username + password
 - [x] Verificar que nenhum e-mail é enviado
+
+
+## FASE 13: Remover OAuth do Manus Completamente
+- [x] Remover getLoginUrl() que redirecionava para OAuth Manus
+- [x] Implementar getLoginUrl() que redireciona para /login local
+- [x] Testar página de login - APENAS username + password
+- [x] Testar página de registro - APENAS username + password
+- [x] Verificar que não há mais redirecionamento para manus.im/app-auth

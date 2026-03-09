@@ -28,6 +28,8 @@ export const resellers = mysqlTable("resellers", {
   taxId: varchar("taxId", { length: 64 }),
   creditBalance: decimal("creditBalance", { precision: 12, scale: 2 }).default("0").notNull(),
   totalCreditsUsed: decimal("totalCreditsUsed", { precision: 12, scale: 2 }).default("0").notNull(),
+  iptvListUrl: text("iptvListUrl"),
+  codePrice: decimal("codePrice", { precision: 10, scale: 2 }).default("0").notNull(),
   status: mysqlEnum("status", ["active", "inactive", "suspended"]).default("active").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -85,6 +87,22 @@ export const subscriptions = mysqlTable("subscriptions", {
 
 export type Subscription = typeof subscriptions.$inferSelect;
 export type InsertSubscription = typeof subscriptions.$inferInsert;
+
+/**
+ * Customers - Clientes vinculados a revendedores
+ */
+export const customers = mysqlTable("customers", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  resellerId: int("resellerId").notNull(),
+  iptvListUrl: text("iptvListUrl"),
+  status: mysqlEnum("status", ["active", "inactive", "blocked"]).default("active").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Customer = typeof customers.$inferSelect;
+export type InsertCustomer = typeof customers.$inferInsert;
 
 /**
  * Devices - Dispositivos registrados para uma assinatura
@@ -158,5 +176,16 @@ export const devicesRelations = relations(devices, ({ one }) => ({
   subscription: one(subscriptions, {
     fields: [devices.subscriptionId],
     references: [subscriptions.id],
+  }),
+}));
+
+export const customersRelations = relations(customers, ({ one }) => ({
+  user: one(users, {
+    fields: [customers.userId],
+    references: [users.id],
+  }),
+  reseller: one(resellers, {
+    fields: [customers.resellerId],
+    references: [resellers.id],
   }),
 }));

@@ -128,3 +128,18 @@
 - [x] Testar página de login - APENAS username + password
 - [x] Testar página de registro - APENAS username + password
 - [x] Verificar que não há mais redirecionamento para manus.im/app-auth
+
+
+## FASE 14: Implementar Lista IPTV e Compra de Códigos
+- [x] Adicionar campo iptvListUrl à tabela resellers
+- [x] Adicionar campo codePrice à tabela resellers (preço do código)
+- [x] Adicionar campo iptvListUrl à tabela customers
+- [x] Criar Page 2 no painel de revendedor para gerenciar lista IPTV
+- [x] Criar Page 2 no painel de cliente para gerenciar lista IPTV
+- [x] Implementar compra de códigos com preço configurável
+- [x] Implementar API Smart TV: validação de código + envio de lista IPTV
+- [x] Mensagens de erro: "Código errado, verifique seu código ou entre em contato com o revendedor"
+- [ ] Botão "Sair" no aplicativo Smart TV
+- [x] Isolamento de painéis: revendedor vê apenas seus dados
+- [x] Admin pode configurar preço de código por revendedor
+- [ ] Clientes aparecem no painel do revendedor após usar código

@@ -310,6 +310,33 @@ const adminRouter = router({
       return { success: true };
     }),
 
+  setResellerCodePrice: adminProcedure
+    .input(
+      z.object({
+        resellerId: z.number(),
+        codePrice: z.number().nonnegative(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const reseller = await db.getResellerById(input.resellerId);
+      if (!reseller) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Reseller not found" });
+      }
+
+      await db.updateResellerCodePrice(input.resellerId, input.codePrice.toString());
+      return { success: true };
+    }),
+
+  getResellerCodePrice: adminProcedure
+    .input(z.object({ resellerId: z.number() }))
+    .query(async ({ input }) => {
+      const reseller = await db.getResellerByIdWithPrice(input.resellerId);
+      if (!reseller) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Reseller not found" });
+      }
+      return { codePrice: reseller.codePrice };
+    }),
+
   getStatistics: adminProcedure.query(async () => {
     const users = await db.getAllUsers();
     const resellers = await db.getAllResellers();
@@ -358,6 +385,76 @@ const smartTvRouter = router({
       // This is a simplified version - in production you'd need to query devices table
       return { active: false, message: "Device not found" };
     }),
+
+  // IPTV List Management
+  getIptvList: publicProcedure
+    .input(z.object({ code: z.string() }))
+    .query(async ({ input }) => {
+      const activationCode = await db.getActivationCodeByCode(input.code);
+      if (!activationCode || activationCode.status !== "activated") {
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "Código errado, verifique seu código ou entre em contato com o revendedor" });
+      }
+
+      const subscription = await db.getSubscriptionByCodeId(activationCode.id);
+      if (!subscription || subscription.status !== "active") {
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "Assinatura inativa ou expirada" });
+      }
+
+      if (new Date() > subscription.expirationDate) {
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "Assinatura expirada" });
+      }
+
+      const customer = await db.getCustomerByUserId(subscription.customerId);
+      if (!customer || !customer.iptvListUrl) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Lista IPTV não configurada" });
+      }
+
+      return { iptvListUrl: customer.iptvListUrl };
+    }),
+});
+
+// ===== IPTV ROUTER =====
+
+const iptvRouter = router({
+  updateResellerList: resellerProcedure
+    .input(z.object({ iptvListUrl: z.string().url() }))
+    .mutation(async ({ input, ctx }) => {
+      const reseller = await db.getResellerByUserId(ctx.user!.id);
+      if (!reseller) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Reseller not found" });
+      }
+
+      await db.updateResellerIptvList(reseller.id, input.iptvListUrl);
+      return { success: true };
+    }),
+
+  updateCustomerList: protectedProcedure
+    .input(z.object({ iptvListUrl: z.string().url() }))
+    .mutation(async ({ input, ctx }) => {
+      if (ctx.user!.role !== "customer") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Only customers can update their IPTV list" });
+      }
+
+      await db.updateCustomerIptvList(ctx.user!.id, input.iptvListUrl);
+      return { success: true };
+    }),
+
+  getResellerList: resellerProcedure.query(async ({ ctx }) => {
+    const reseller = await db.getResellerByUserId(ctx.user!.id);
+    if (!reseller) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Reseller not found" });
+    }
+    return { iptvListUrl: reseller.iptvListUrl || null };
+  }),
+
+  getCustomerList: protectedProcedure.query(async ({ ctx }) => {
+    if (ctx.user!.role !== "customer") {
+      throw new TRPCError({ code: "FORBIDDEN", message: "Only customers can access their IPTV list" });
+    }
+
+    const customer = await db.getCustomerByUserId(ctx.user!.id);
+    return { iptvListUrl: customer?.iptvListUrl || null };
+  }),
 });
 
 // ===== MAIN ROUTER =====
@@ -368,6 +465,7 @@ export const appRouter = router({
   customer: customerRouter,
   admin: adminRouter,
   smartTv: smartTvRouter,
+  iptv: iptvRouter,
 });
 
 export type AppRouter = typeof appRouter;

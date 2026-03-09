@@ -206,3 +206,75 @@ export async function getDevicesBySubscriptionId(subscriptionId: number): Promis
 
   return db.select().from(devices).where(eq(devices.subscriptionId, subscriptionId));
 }
+
+
+// ===== CUSTOMER QUERIES =====
+
+export async function createCustomer(customerId: number, resellerId: number, iptvListUrl?: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const { customers } = await import("../drizzle/schema");
+  const result = await db.insert(customers).values({
+    userId: customerId,
+    resellerId,
+    iptvListUrl,
+  });
+  return result;
+}
+
+export async function getCustomerByUserId(userId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const { customers } = await import("../drizzle/schema");
+  const result = await db.select().from(customers).where(eq(customers.userId, userId)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getCustomersByResellerId(resellerId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const { customers } = await import("../drizzle/schema");
+  return db.select().from(customers).where(eq(customers.resellerId, resellerId));
+}
+
+export async function updateCustomerIptvList(userId: number, iptvListUrl: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const { customers } = await import("../drizzle/schema");
+  return db.update(customers).set({ iptvListUrl }).where(eq(customers.userId, userId));
+}
+
+export async function updateResellerIptvList(resellerId: number, iptvListUrl: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return db.update(resellers).set({ iptvListUrl }).where(eq(resellers.id, resellerId));
+}
+
+export async function updateResellerCodePrice(resellerId: number, codePrice: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return db.update(resellers).set({ codePrice }).where(eq(resellers.id, resellerId));
+}
+
+export async function getResellerByIdWithPrice(resellerId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select().from(resellers).where(eq(resellers.id, resellerId)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+
+export async function getSubscriptionByCodeId(codeId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select().from(subscriptions).where(eq(subscriptions.activationCodeId, codeId)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}

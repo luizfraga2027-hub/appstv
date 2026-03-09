@@ -8,8 +8,20 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import AdminDashboard from "./pages/AdminDashboard";
+import AdminLogin from "./pages/AdminLogin";
 import ResellerDashboard from "./pages/ResellerDashboard";
 import CustomerDashboard from "./pages/CustomerDashboard";
+import { useAuth } from "./_core/hooks/useAuth";
+
+function ProtectedAdminRoute({ component: Component }: { component: React.ComponentType }) {
+  const { user, isAuthenticated } = useAuth();
+
+  if (!isAuthenticated || user?.role !== "admin") {
+    return <NotFound />;
+  }
+
+  return <Component />;
+}
 
 function Router() {
   return (
@@ -17,7 +29,8 @@ function Router() {
       <Route path={"/"} component={Home} />
       <Route path={"/login"} component={Login} />
       <Route path={"/register"} component={Register} />
-      <Route path={"/admin"} component={AdminDashboard} />
+      <Route path={"/admin/login"} component={AdminLogin} />
+      <Route path={"/admin"} component={() => <ProtectedAdminRoute component={AdminDashboard} />} />
       <Route path={"/dashboard/reseller"} component={ResellerDashboard} />
       <Route path={"/dashboard/customer"} component={CustomerDashboard} />
       <Route path={"/404"} component={NotFound} />
@@ -36,7 +49,7 @@ function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider
-        defaultTheme="light"
+        defaultTheme="dark"
         // switchable
       >
         <TooltipProvider>

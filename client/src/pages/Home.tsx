@@ -11,9 +11,9 @@ export default function Home() {
 
   const handleGetStarted = () => {
     if (isAuthenticated && user) {
-      if (user.role === "admin") setLocation("/admin");
-      else if (user.role === "reseller") setLocation("/dashboard/reseller");
-      else setLocation("/dashboard/customer");
+      if (user.role === "reseller") setLocation("/dashboard/reseller");
+      else if (user.role === "customer") setLocation("/dashboard/customer");
+      // Admin users are redirected elsewhere, not shown in public UI
     } else {
       window.location.href = getLoginUrl();
     }
@@ -31,11 +31,7 @@ export default function Home() {
             <span className="text-xl font-bold">AppsTV</span>
           </div>
           <div className="flex items-center gap-4">
-            {isAuthenticated ? (
-              <Button onClick={handleGetStarted} className="bg-accent hover:bg-accent/90 text-accent-foreground">
-                Ir para Dashboard
-              </Button>
-            ) : (
+            {!isAuthenticated ? (
               <>
                 <Button
                   variant="ghost"
@@ -51,7 +47,7 @@ export default function Home() {
                   Cadastro
                 </Button>
               </>
-            )}
+            ) : null}
           </div>
         </div>
       </nav>
@@ -87,20 +83,20 @@ export default function Home() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button
-                onClick={handleGetStarted}
+                onClick={() => setLocation("/register")}
                 size="lg"
                 className="bg-accent hover:bg-accent/90 text-accent-foreground text-base px-8 h-12"
               >
                 <Zap className="mr-2 h-5 w-5" />
-                Começar Agora
+                Criar Conta
               </Button>
               <Button
-                onClick={() => setLocation("/register")}
+                onClick={() => (window.location.href = getLoginUrl())}
                 variant="outline"
                 size="lg"
                 className="border-accent/50 text-foreground hover:bg-accent/10 text-base px-8 h-12"
               >
-                Criar Conta
+                Fazer Login
               </Button>
             </div>
           </div>
@@ -286,20 +282,20 @@ export default function Home() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button
-                onClick={handleGetStarted}
+                onClick={() => setLocation("/register")}
                 size="lg"
                 className="bg-accent hover:bg-accent/90 text-accent-foreground text-base px-8 h-12"
               >
                 <Zap className="mr-2 h-5 w-5" />
-                Começar Agora
+                Criar Conta
               </Button>
               <Button
-                onClick={() => setLocation("/register")}
+                onClick={() => (window.location.href = getLoginUrl())}
                 variant="outline"
                 size="lg"
                 className="border-accent/50 text-foreground hover:bg-accent/10 text-base px-8 h-12"
               >
-                Criar Conta
+                Fazer Login
               </Button>
             </div>
           </div>

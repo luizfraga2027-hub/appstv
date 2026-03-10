@@ -75,9 +75,17 @@ export default function CustomerDashboard() {
     <DashboardLayout>
       <div className="space-y-8">
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold">Minha Assinatura</h1>
-          <p className="text-muted-foreground mt-2">Gerencie sua assinatura e dispositivos</p>
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold">Minha Assinatura</h1>
+            <p className="text-muted-foreground mt-2">Gerencie sua assinatura e dispositivos</p>
+          </div>
+          <Button
+            onClick={() => setLocation("/dashboard/customer/iptv")}
+            className="bg-accent hover:bg-accent/90 text-accent-foreground"
+          >
+            Gerenciar Lista IPTV
+          </Button>
         </div>
 
         {/* Active Subscription Card */}

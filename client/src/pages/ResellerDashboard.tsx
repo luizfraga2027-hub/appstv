@@ -64,9 +64,17 @@ export default function ResellerDashboard() {
     <DashboardLayout>
       <div className="space-y-8">
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold">Dashboard do Revendedor</h1>
-          <p className="text-muted-foreground mt-2">Gerencie seus créditos e códigos de ativação</p>
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold">Dashboard do Revendedor</h1>
+            <p className="text-muted-foreground mt-2">Gerencie seus créditos e códigos de ativação</p>
+          </div>
+          <Button
+            onClick={() => setLocation("/dashboard/reseller/iptv")}
+            className="bg-accent hover:bg-accent/90 text-accent-foreground"
+          >
+            Gerenciar Lista IPTV
+          </Button>
         </div>
 
         {/* Credits Card */}

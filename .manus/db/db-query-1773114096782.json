@@ -1,0 +1,9 @@
+{
+  "query": "\nINSERT INTO resellers (userId, companyName, creditBalance, totalCreditsUsed, status) \nSELECT id, 'Test Reseller Company', '1000.00', '0.00', 'active' \nFROM users WHERE username = 'reseller' AND id NOT IN (SELECT userId FROM resellers);\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2HhSjZvaCXKQGrz.root --database Bsk4ozJFukmegE5iMnzBQL --execute \nINSERT INTO resellers (userId, companyName, creditBalance, totalCreditsUsed, status) \nSELECT id, 'Test Reseller Company', '1000.00', '0.00', 'active' \nFROM users WHERE username = 'reseller' AND id NOT IN (SELECT userId FROM resellers);\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 72
+}

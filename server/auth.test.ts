@@ -161,6 +161,9 @@ describe("Authentication System", () => {
         return;
       }
       await db.updateResellerCredits(resellerId, 50);
+      // Invalidate cache after update to get fresh data
+      const { cache } = await import("./cache");
+      cache.delete(`reseller:${resellerId}`);
       const reseller = await db.getResellerById(resellerId);
 
       expect(parseFloat(reseller!.creditBalance.toString())).toBe(150);

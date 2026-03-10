@@ -1,5 +1,6 @@
-import { eq, and } from "drizzle-orm";
+import { eq, desc, gte, lte, and } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
+import { cache, getOrSet } from "./cache";
 import { InsertUser, users, resellers, creditTransactions, activationCodes, subscriptions, devices, applications, macActivations, accessLogs, customers, plans, resellerPlans, appCodes } from "../drizzle/schema";
 import type { User, Reseller, CreditTransaction, ActivationCode, Subscription, Device, Application, InsertApplication, MacActivation, InsertMacActivation, AccessLog, InsertAccessLog, Customer, Plan, InsertPlan, ResellerPlan, InsertResellerPlan, AppCode, InsertAppCode } from "../drizzle/schema";
 
@@ -79,18 +80,22 @@ export async function getResellerByUserId(userId: number): Promise<Reseller | un
 }
 
 export async function getResellerById(id: number): Promise<Reseller | undefined> {
-  const db = await getDb();
-  if (!db) return undefined;
+  return getOrSet(`reseller:${id}`, async () => {
+    const db = await getDb();
+    if (!db) return undefined;
 
-  const result = await db.select().from(resellers).where(eq(resellers.id, id)).limit(1);
-  return result.length > 0 ? result[0] : undefined;
+    const result = await db.select().from(resellers).where(eq(resellers.id, id)).limit(1);
+    return result.length > 0 ? result[0] : undefined;
+  }, 600); // 10 minutes cache
 }
 
 export async function getAllResellers(): Promise<Reseller[]> {
-  const db = await getDb();
-  if (!db) return [];
+  return getOrSet('resellers:all', async () => {
+    const db = await getDb();
+    if (!db) return [];
 
-  return db.select().from(resellers);
+    return db.select().from(resellers);
+  }, 600); // 10 minutes cache
 }
 
 export async function updateResellerCredits(resellerId: number, amount: number): Promise<void> {
@@ -291,10 +296,12 @@ export async function createApplication(data: InsertApplication) {
 }
 
 export async function getAllApplications() {
-  const db = await getDb();
-  if (!db) return [];
+  return getOrSet('applications:all', async () => {
+    const db = await getDb();
+    if (!db) return [];
 
-  return db.select().from(applications).where(eq(applications.status, "active"));
+    return db.select().from(applications);
+  }, 600); // 10 minutes cache
 }
 
 export async function getApplicationById(id: number) {
@@ -367,19 +374,56 @@ export async function deleteMacActivation(macId: string) {
 
 // ===== ACCESS LOGS =====
 
-export async function createAccessLog(data: InsertAccessLog) {
+export async function createAccessLog(data: InsertAccessLog): Promise<AccessLog> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const result = await db.insert(accessLogs).values(data);
-  return result;
+  await db.insert(accessLogs).values(data);
+  const result = await db.select().from(accessLogs).orderBy(desc(accessLogs.createdAt)).limit(1);
+  return result[0]!;
 }
 
 export async function getAccessLogsByMacId(macId: string) {
   const db = await getDb();
   if (!db) return [];
 
-  return db.select().from(accessLogs).where(eq(accessLogs.macId, macId));
+  return db.select().from(accessLogs).where(eq(accessLogs.macId, macId)).orderBy(desc(accessLogs.createdAt));
+}
+
+export async function getAccessLogsByApplicationId(applicationId: number, limit: number = 100) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(accessLogs).where(eq(accessLogs.applicationId, applicationId)).orderBy(desc(accessLogs.createdAt)).limit(limit);
+}
+
+export async function getAccessLogsByDateRange(startDate: Date, endDate: Date, limit: number = 500) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(accessLogs).where(
+    and(
+      gte(accessLogs.createdAt, startDate),
+      lte(accessLogs.createdAt, endDate)
+    )
+  ).orderBy(desc(accessLogs.createdAt)).limit(limit);
+}
+
+export async function getAccessLogStatistics(days: number = 7) {
+  const db = await getDb();
+  if (!db) return { totalAttempts: 0, successCount: 0, failedCount: 0, blockedCount: 0 };
+
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+
+  const logs = await db.select().from(accessLogs).where(gte(accessLogs.createdAt, startDate));
+  
+  return {
+    totalAttempts: logs.length,
+    successCount: logs.filter(l => l.status === 'success').length,
+    failedCount: logs.filter(l => l.status === 'failed').length,
+    blockedCount: logs.filter(l => l.status === 'blocked').length,
+  };
 }
 
 

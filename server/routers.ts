@@ -3,6 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { createToken, hashPassword, verifyPassword } from "./auth";
 import * as db from "./db";
+import * as advanced from "./advanced";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { nanoid } from "nanoid";
@@ -175,6 +176,37 @@ const resellerRouter = router({
       throw new TRPCError({ code: "NOT_FOUND", message: "Reseller profile not found" });
     }
     return db.getActivationCodesByResellerId(reseller.id);
+  }),
+
+  bulkGenerateCodes: resellerProcedure
+    .input(
+      z.object({
+        count: z.number().min(1).max(1000),
+        durationDays: z.number().min(1).max(365),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const reseller = await db.getResellerByUserId(ctx.user!.id);
+      if (!reseller) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Reseller profile not found" });
+      }
+      return advanced.bulkGenerateActivationCodes(reseller.id, input.count, input.durationDays);
+    }),
+
+  exportData: resellerProcedure.query(async ({ ctx }) => {
+    const reseller = await db.getResellerByUserId(ctx.user!.id);
+    if (!reseller) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Reseller profile not found" });
+    }
+    return advanced.exportResellerData(reseller.id);
+  }),
+
+  getAnalytics: resellerProcedure.query(async ({ ctx }) => {
+    const reseller = await db.getResellerByUserId(ctx.user!.id);
+    if (!reseller) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Reseller profile not found" });
+    }
+    return advanced.getResellerAnalytics(reseller.id);
   }),
 });
 
@@ -353,6 +385,27 @@ const adminRouter = router({
       totalCredits,
     };
   }),
+
+  getAccessLogs: adminProcedure
+    .input(z.object({ limit: z.number().default(100), days: z.number().default(7) }))
+    .query(async ({ input }) => {
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - input.days);
+      const endDate = new Date();
+      return db.getAccessLogsByDateRange(startDate, endDate, input.limit);
+    }),
+
+  getAccessLogStatistics: adminProcedure
+    .input(z.object({ days: z.number().default(7) }))
+    .query(async ({ input }) => {
+      return db.getAccessLogStatistics(input.days);
+    }),
+
+  getAccessLogsByMac: adminProcedure
+    .input(z.object({ macId: z.string() }))
+    .query(async ({ input }) => {
+      return db.getAccessLogsByMacId(input.macId);
+    }),
 });
 
 // ===== SMART TV API ROUTER =====

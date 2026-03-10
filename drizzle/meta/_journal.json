@@ -50,6 +50,13 @@
       "when": 1773111859531,
       "tag": "0006_legal_odin",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1773112293215,
+      "tag": "0007_absurd_longshot",
+      "breakpoints": true
     }
   ]
 }

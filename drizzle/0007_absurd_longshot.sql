@@ -1,0 +1,1 @@
+ALTER TABLE `creditTransactions` MODIFY COLUMN `type` enum('purchase','distribution','refund','mac_activation') NOT NULL;

@@ -45,7 +45,7 @@ export const creditTransactions = mysqlTable("creditTransactions", {
   id: int("id").autoincrement().primaryKey(),
   resellerId: int("resellerId").notNull(),
   amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
-  type: mysqlEnum("type", ["purchase", "distribution", "refund"]).notNull(),
+  type: mysqlEnum("type", ["purchase", "distribution", "refund", "mac_activation"]).notNull(),
   description: text("description"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });

@@ -519,7 +519,14 @@ const macActivationsRouter = router({
         throw new TRPCError({ code: "BAD_REQUEST", message: "Créditos insuficientes para ativar este cliente" });
       }
 
+      // Deduct credit and create transaction record
       await db.updateResellerCredits(reseller.id, -1);
+      await db.createCreditTransaction({
+        resellerId: reseller.id,
+        amount: "-1",
+        type: "mac_activation",
+        description: `MAC ID ativado: ${input.macId} (${input.clientName})`,
+      });
 
       const expirationDate = new Date();
       expirationDate.setFullYear(expirationDate.getFullYear() + 1);

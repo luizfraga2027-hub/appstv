@@ -1,7 +1,7 @@
 import { eq, and } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, resellers, creditTransactions, activationCodes, subscriptions, devices, applications, macActivations, accessLogs, customers } from "../drizzle/schema";
-import type { User, Reseller, CreditTransaction, ActivationCode, Subscription, Device, Application, InsertApplication, MacActivation, InsertMacActivation, AccessLog, InsertAccessLog, Customer } from "../drizzle/schema";
+import { InsertUser, users, resellers, creditTransactions, activationCodes, subscriptions, devices, applications, macActivations, accessLogs, customers, plans, resellerPlans } from "../drizzle/schema";
+import type { User, Reseller, CreditTransaction, ActivationCode, Subscription, Device, Application, InsertApplication, MacActivation, InsertMacActivation, AccessLog, InsertAccessLog, Customer, Plan, InsertPlan, ResellerPlan, InsertResellerPlan } from "../drizzle/schema";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -380,4 +380,89 @@ export async function getAccessLogsByMacId(macId: string) {
   if (!db) return [];
 
   return db.select().from(accessLogs).where(eq(accessLogs.macId, macId));
+}
+
+
+// ===== PLANS =====
+
+export async function createPlan(data: InsertPlan): Promise<Plan> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(plans).values(data);
+  const newPlan = await db.select().from(plans).where(eq(plans.id, result[0].insertId as number)).limit(1);
+  return newPlan[0]!;
+}
+
+export async function getPlanById(id: number): Promise<Plan | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select().from(plans).where(eq(plans.id, id)).limit(1);
+  return result[0];
+}
+
+export async function getAllPlans(): Promise<Plan[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(plans);
+}
+
+export async function updatePlan(id: number, data: Partial<Plan>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(plans).set(data).where(eq(plans.id, id));
+}
+
+export async function deletePlan(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.delete(plans).where(eq(plans.id, id));
+}
+
+// ===== RESELLER PLANS =====
+
+export async function createResellerPlan(data: InsertResellerPlan): Promise<ResellerPlan> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(resellerPlans).values(data);
+  const newResellerPlan = await db.select().from(resellerPlans).where(eq(resellerPlans.id, result[0].insertId as number)).limit(1);
+  return newResellerPlan[0]!;
+}
+
+export async function getResellerPlanByResellerId(resellerId: number): Promise<ResellerPlan | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select().from(resellerPlans).where(eq(resellerPlans.resellerId, resellerId)).limit(1);
+  return result[0];
+}
+
+export async function getResellerPlanWithDetails(resellerId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select().from(resellerPlans).where(eq(resellerPlans.resellerId, resellerId)).limit(1);
+  if (!result[0]) return undefined;
+
+  const plan = await db.select().from(plans).where(eq(plans.id, result[0].planId)).limit(1);
+  return { resellerPlan: result[0], plan: plan[0] };
+}
+
+export async function updateResellerPlan(resellerId: number, data: Partial<ResellerPlan>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(resellerPlans).set(data).where(eq(resellerPlans.resellerId, resellerId));
+}
+
+export async function deleteResellerPlan(resellerId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.delete(resellerPlans).where(eq(resellerPlans.resellerId, resellerId));
 }

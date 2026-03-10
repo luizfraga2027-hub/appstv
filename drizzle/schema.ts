@@ -191,6 +191,44 @@ export const customersRelations = relations(customers, ({ one }) => ({
 }));
 
 /**
+ * Plans - Planos de assinatura (CREDIT ou MONTHLY)
+ */
+export const plans = mysqlTable("plans", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  type: mysqlEnum("type", ["credit", "monthly"]).notNull(),
+  maxApplications: int("maxApplications").default(999).notNull(), // 999 = unlimited
+  maxDns: int("maxDns").default(3).notNull(),
+  maxConnections: int("maxConnections").default(999).notNull(), // 999 = unlimited
+  price: decimal("price", { precision: 10, scale: 2 }).default("0").notNull(),
+  description: text("description"),
+  status: mysqlEnum("status", ["active", "inactive"]).default("active").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Plan = typeof plans.$inferSelect;
+export type InsertPlan = typeof plans.$inferInsert;
+
+/**
+ * Reseller Plans - Associação entre revendedor e plano
+ */
+export const resellerPlans = mysqlTable("resellerPlans", {
+  id: int("id").autoincrement().primaryKey(),
+  resellerId: int("resellerId").notNull(),
+  planId: int("planId").notNull(),
+  activationCode: varchar("activationCode", { length: 64 }).notNull().unique(),
+  dns1: varchar("dns1", { length: 255 }),
+  dns2: varchar("dns2", { length: 255 }),
+  dns3: varchar("dns3", { length: 255 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ResellerPlan = typeof resellerPlans.$inferSelect;
+export type InsertResellerPlan = typeof resellerPlans.$inferInsert;
+
+/**
  * Applications - Aplicativos disponíveis no sistema
  */
 export const applications = mysqlTable("applications", {

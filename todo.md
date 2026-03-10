@@ -1,267 +1,170 @@
-# AppsTV — TODO List
+# AppsTV — Cronograma Completo (12 Fases)
 
-## FASE 1: Autenticação JWT Local
-- [x] Remover OAuth Manus do schema e contexto
-- [x] Criar tabela users com campos: id, username, password_hash, name, role, status
-- [x] Implementar bcryptjs para hash de senhas
-- [x] Criar procedimento de registro (POST /api/auth/register)
-- [x] Criar procedimento de login com JWT (POST /api/auth/login)
-- [x] Criar procedimento de logout (POST /api/auth/logout)
-- [x] Criar middleware de proteção de rotas com JWT
-- [ ] Implementar testes de autenticação
+## ⚠️ REGRAS PRINCIPAIS - OBRIGATÓRIO SEGUIR
+- ❌ **PROIBIDO ABSOLUTO**: E-mail em qualquer lugar (cadastro, login, notificações, etc)
+- ❌ **PROIBIDO ABSOLUTO**: OAuth, Google Login, GitHub Login, Stripe, Manus OAuth
+- ❌ **PROIBIDO ABSOLUTO**: Qualquer serviço externo de autenticação ou pagamento
+- ✅ **OBRIGATÓRIO**: Autenticação JWT local com username + password APENAS
+- ✅ **OBRIGATÓRIO**: Sistema 100% independente, sem dependências externas
 
-## FASE 2: Sistema de Créditos e Revendedores
-- [x] Criar tabela resellers com campos: id, userId, companyName, creditBalance, status
-- [x] Criar tabela credit_transactions com campos: id, resellerId, amount, type, description
-- [x] Implementar procedimento: admin adiciona créditos para revendedor
-- [x] Implementar procedimento: revendedor visualiza saldo de créditos
-- [x] Implementar procedimento: histórico de transações de créditos
-- [ ] Implementar testes de sistema de créditos
+---
 
-## FASE 3: Códigos de Ativação
-- [x] Criar tabela activation_codes com campos: id, code, resellerId, customerId, status, expirationDate
-- [x] Implementar geração de códigos únicos (30, 90, 180, 365 dias)
-- [x] Implementar procedimento: revendedor gera códigos de ativação
-- [x] Implementar procedimento: listar códigos gerados por revendedor
-- [x] Implementar procedimento: validar código de ativação
-- [ ] Implementar testes de códigos de ativação
+## FASE 1: Autenticação ✅
+- [x] Tabela users: id, username, password_hash, name, role, status (SEM EMAIL)
+- [x] Login/Registro LOCAL (username + password, SEM e-mail)
+- [x] JWT + cookie seguro
+- [x] URLs exclusivas: Landing Page (usuário final), /admin/login (admin), /reseller/login (revendedor)
+- [x] Validação de entradas
+- [ ] Testes vitest: login, logout, acesso protegido
 
-## FASE 4: Sistema de Assinaturas
-- [x] Criar tabela subscriptions com campos: id, customerId, activationCodeId, status, startDate, expirationDate
-- [x] Criar tabela devices com campos: id, subscriptionId, deviceId, deviceName, lastAccessAt
-- [x] Implementar procedimento: cliente ativa código de ativação
-- [x] Implementar procedimento: verificar status de assinatura
-- [x] Implementar procedimento: registrar dispositivo
-- [ ] Implementar procedimento: renovar assinatura
-- [x] Implementar API para Smart TV validar código e verificar status
+---
 
-## FASE 5: Landing Page
-- [x] Criar layout da landing page com visual elegante
-- [x] Adicionar seção de explicação do serviço
-- [x] Adicionar aviso: "NÃO vendemos listas IPTV ou conteúdo"
-- [x] Adicionar botões de login e cadastro
-- [x] Adicionar seção FAQ
-- [x] Implementar responsividade
+## FASE 2: Dashboard Básico
+- [ ] **Usuário Final**: Visualizar assinatura, status, data expiração, adicionar lista IPTV (URL M3U)
+- [ ] **Revendedor**: Dashboard com estatísticas (clientes ativos/expirados, ativações, créditos)
+- [ ] **Admin**: Dashboard geral (total usuários, revendedores, ativações, créditos vendidos)
 
-## FASE 6: Dashboard Administrativo
-- [x] Criar layout do dashboard admin com sidebar
-- [x] Implementar página de visão geral (overview)
-- [x] Implementar gerenciamento de usuários
-- [x] Implementar gerenciamento de revendedores
-- [x] Implementar visualização de estatísticas globais
-- [ ] Implementar histórico de transações
-- [ ] Implementar geração de relatórios
+---
 
-## FASE 7: Dashboard de Revendedor
-- [x] Criar layout do dashboard revendedor
-- [x] Implementar visualização de saldo de créditos
-- [x] Implementar geração de códigos de ativação
-- [x] Implementar listagem de códigos gerados
-- [ ] Implementar visualização de clientes vinculados
-- [x] Implementar histórico de ativações
-- [ ] Implementar estatísticas de vendas
+## FASE 3: Planos Exclusivos
+- [ ] Tabela de planos: id, name, type (CREDIT ou MONTHLY), maxApps, maxDns, price
+- [ ] Usuário final → plano individual / assinatura anual
+- [ ] Revendedor mensalista → limite de aplicativos e DNS por plano
+- [ ] Revendedor crédito → acesso a todos aplicativos, cada ativação = 1 crédito
+- [ ] Diferenciar mensalista x crédito no fluxo de criação
 
-## FASE 8: Dashboard de Cliente
-- [x] Criar layout do dashboard cliente
-- [x] Implementar visualização de assinaturas ativas
-- [x] Implementar visualização de data de expiração
-- [x] Implementar listagem de dispositivos ativados
-- [x] Implementar histórico de ativações
-- [x] Implementar funcionalidade de ativar novo código
-- [ ] Implementar renovação de assinatura
+---
 
-## FASE 9: Testes e Integração
-- [ ] Escrever testes unitários para autenticação
-- [ ] Escrever testes para sistema de créditos
-- [ ] Escrever testes para códigos de ativação
-- [ ] Escrever testes para assinaturas
-- [ ] Testar fluxos completos (revendedor → cliente)
-- [ ] Testar API Smart TV
-- [ ] Testar hierarquia de permissões
+## FASE 4: Gestão de Aplicativos (Admin)
+- [ ] Tabela applications: id, name, version, code, description, apiUrl, status, createdAt
+- [ ] Cadastrar aplicativo: nome, versão, código, descrição, API, status
+- [ ] Ativar / desativar aplicativos
+- [ ] Liberar aplicativos para revendedores mensalistas
+- [ ] Apps por crédito → liberados automaticamente
+- [ ] Apps por mensalista → restrição configurável
+- [ ] Logs de API e validação de acesso
 
-## FASE 10: Deploy e Documentação
-- [ ] Criar documentação de instalação
-- [ ] Criar documentação de configuração
-- [ ] Criar guia de uso para admin
-- [ ] Criar guia de uso para revendedor
-- [ ] Criar guia de uso para cliente
-- [ ] Preparar para deploy em VPS Linux com PM2 e Nginx
-- [ ] Criar checkpoint final
+---
 
+## FASE 5: Gestão de Códigos de Aplicativos
+- [ ] Tabela appCodes: id, code, resellerId, appId, dnsCount, status, createdAt
+- [ ] **Revendedor Mensalista**:
+  - [ ] Criar código de ativação por aplicativo permitido
+  - [ ] Definir quantidade de DNS (limitada pelo plano)
+  - [ ] Associar DNS ao código
+- [ ] **Usuário Final**:
+  - [ ] Inserir código + usuário + senha no aplicativo
+  - [ ] Sistema valida código + DNS + MAC ID
 
-## FASE 10: Melhoria Visual da Landing Page
-- [x] Redesenhar landing page com fundo escuro elegante
-- [x] Implementar paleta de cores vibrantes (verde neon, laranja, azul ciano)
-- [x] Adicionar aviso legal proeminente (banner ou modal)
-- [x] Criar grid de features bem organizado
-- [x] Melhorar tipografia e hierarquia visual
-- [x] Implementar animações sutis e transições
-- [x] Testar responsividade mobile/tablet/desktop
-- [x] Adicionar seção de compatibilidade com dispositivos
+---
 
+## FASE 6: Ativação de Clientes (MAC ID)
+- [ ] Tabela macActivations: id, macId, resellerId, appId, iptvListUrl, dns1, dns2, dns3, clientName, expirationDate, status
+- [ ] **Revendedor Crédito**:
+  - [ ] Cada MAC ID ativado = 1 crédito descontado
+  - [ ] Inserir: MAC ID + lista IPTV + aplicativo
+  - [ ] Registrar: revendedor, aplicativo, MAC ID, lista, DNS, data ativação/expiração (12 meses)
+- [ ] **Revendedor Mensalista**:
+  - [ ] Cada MAC ID ativado não consome crédito
+  - [ ] Inserir: MAC ID + lista IPTV + código do aplicativo + DNS associada
+- [ ] Limite: 1 MAC ID = 1 dispositivo
+- [ ] Bloqueio de MAC duplicado
+- [ ] Anti-compartilhamento de lista IPTV
+- [ ] Logs de acesso (MAC, IP, data/hora, aplicativo, status)
 
-## FASE 11: Página Administrativa Exclusiva
-- [x] Remover links de admin da landing page e navegação pública
-- [x] Criar página de login admin com URL secreta
-- [x] Implementar proteção de rota para admin (verificação de role)
-- [x] Testar acesso e segurança
+---
 
+## FASE 7: Painel do Revendedor
+- [ ] **Comum a ambos os tipos**:
+  - [ ] Clientes ativados: tabela com MAC ID, aplicativo, lista IPTV, DNS, data ativação/expiração, status
+  - [ ] Editar lista IPTV individual por MAC ID
+  - [ ] Deletar MAC ID
+- [ ] **Mensalista**:
+  - [ ] Criar código de ativação para cada aplicativo liberado
+  - [ ] Definir quantidade de DNS por código
+  - [ ] Visualizar conexões disponíveis x usadas
+  - [ ] Visualizar aplicativos autorizados
+  - [ ] Visualizar código de ativação único
+- [ ] **Crédito**:
+  - [ ] Ativar clientes usando créditos
+  - [ ] Visualizar saldo de créditos e histórico de transações
 
-## FASE 12: Limpeza Completa - Remover E-mail e Serviços Externos
-- [x] Remover campo email da tabela users no schema
-- [x] Remover campo loginMethod da tabela users
-- [x] Atualizar migrations do banco de dados
-- [x] Remover validação de e-mail do registro
-- [x] Remover validação de e-mail do login
-- [x] Remover todas as referências a OAuth no código
-- [x] Remover integração com Manus OAuth
-- [x] Remover integração com Google/GitHub
-- [x] Remover integração com Stripe
-- [x] Auditar e remover qualquer serviço externo
-- [x] Testar login/registro com apenas username + password
-- [x] Verificar que nenhum e-mail é enviado
+---
 
+## FASE 8: Painel do Usuário Final
+- [ ] Adicionar lista IPTV
+- [ ] Visualizar status da assinatura
+- [ ] Visualizar dispositivos ativados (MAC IDs)
+- [ ] Comprar créditos (opcional)
+- [ ] Ativar aplicativo usando código + usuário + senha
+- [ ] Sistema valida automaticamente e registra MAC ID, lista, DNS
 
-## FASE 13: Remover OAuth do Manus Completamente
-- [x] Remover getLoginUrl() que redirecionava para OAuth Manus
-- [x] Implementar getLoginUrl() que redireciona para /login local
-- [x] Testar página de login - APENAS username + password
-- [x] Testar página de registro - APENAS username + password
-- [x] Verificar que não há mais redirecionamento para manus.im/app-auth
+---
 
+## FASE 9: Painel Administrativo Avançado
+- [ ] **Gestão de Revendedores**:
+  - [ ] Criar revendedor: definir tipo (CREDIT ou MONTHLY), plano, DNS (se monthly), aplicativos permitidos
+  - [ ] Editar, bloquear, desbloquear, deletar revendedor
+  - [ ] Adicionar/remover créditos (crédito)
+  - [ ] Visualizar código de ativação (mensalista)
+- [ ] **Gestão de Clientes**:
+  - [ ] Visualizar todos clientes
+  - [ ] Transferir clientes entre revendedores
+  - [ ] Bloquear/excluir MAC
+- [ ] **Gestão de Aplicativos**:
+  - [ ] Cadastrar, ativar, desativar, editar, excluir
+  - [ ] Associar API de cada app
+- [ ] **Gestão de Códigos**:
+  - [ ] Definir apps liberados para revendedores mensalistas
+  - [ ] Limitar quantidade de DNS por código
+- [ ] **Logs**:
+  - [ ] Acessos, falhas, tentativas de login, MAC inválidos
 
-## FASE 14: Implementar Lista IPTV e Compra de Códigos
-- [x] Adicionar campo iptvListUrl à tabela resellers
-- [x] Adicionar campo codePrice à tabela resellers (preço do código)
-- [x] Adicionar campo iptvListUrl à tabela customers
-- [x] Criar Page 2 no painel de revendedor para gerenciar lista IPTV
-- [x] Criar Page 2 no painel de cliente para gerenciar lista IPTV
-- [x] Implementar compra de códigos com preço configurável
-- [x] Implementar API Smart TV: validação de código + envio de lista IPTV
-- [x] Mensagens de erro: "Código errado, verifique seu código ou entre em contato com o revendedor"
-- [ ] Botão "Sair" no aplicativo Smart TV
-- [x] Isolamento de painéis: revendedor vê apenas seus dados
-- [x] Admin pode configurar preço de código por revendedor
-- [ ] Clientes aparecem no painel do revendedor após usar código
+---
 
+## FASE 10: API para Aplicativos Smart TV
+- [ ] POST /api/app/activate → ativação por MAC + código + DNS
+- [ ] POST /api/app/validate → valida usuário, código, MAC, DNS
+- [ ] POST /api/app/check → retorna lista IPTV, status, expiração
+- [ ] Validação de MAC ID
+- [ ] Validação de assinatura ativa
+- [ ] Controle de DNS
+- [ ] Anti-compartilhamento de lista IPTV
+- [ ] Logs de acesso
 
-## FASE 15: Correções e Novas Funcionalidades Completas
+---
 
-### 1. Correção de Erro 404
-- [x] Corrigir rotas para Page 2 do painel de usuário
-- [x] Corrigir rotas para Page 2 do painel de revendedor
-- [ ] Implementar paginação no painel do usuário
-- [ ] Implementar paginação no painel do revendedor
-- [ ] Implementar paginação na listagem de clientes
-- [ ] Implementar paginação na listagem de códigos
-- [ ] Implementar paginação na listagem de ativações
+## FASE 11: Segurança e Validações
+- [ ] Limite de dispositivos: 1 MAC ID = 1 ativação
+- [ ] Bloqueio de MAC duplicado
+- [ ] Verificação de DNS correta para revenda mensalista
+- [ ] Anti-compartilhamento de lista IPTV
+- [ ] Logs de auditoria completos
+- [ ] Validação de entradas em todos os endpoints
+- [ ] Rate limiting em APIs
+- [ ] Proteção contra SQL injection, XSS, CSRF
 
-### 2. Campo de Lista IPTV no Painel do Cliente
-- [x] Adicionar campo de URL M3U no painel do cliente
-- [x] Implementar salvamento de lista IPTV
-- [x] Vincular lista IPTV à assinatura do cliente
+---
 
-### 3. Ativação por MAC ID (Revendedor com Sistema de Créditos)
-- [x] Criar tabela de ativações com MAC ID
-- [x] Implementar fluxo de ativação por MAC ID
-- [x] Verificar créditos disponíveis antes de ativar
-- [x] Descontar 1 crédito por ativação
-- [x] Registrar MAC ID, lista IPTV, aplicativo, DNS, data de ativação/expiração
-- [x] Implementar validação de MAC duplicado
-- [ ] Implementar limite de 1 dispositivo por cliente
+## FASE 12: Testes Completos (Vitest)
+- [ ] Testar autenticação (todos os tipos de usuário)
+- [ ] Testar ativação por MAC ID (mensalista e crédito)
+- [ ] Testar uso de DNS e anti-compartilhamento
+- [ ] Testar dashboard de revendedor (histórico, ativações, saldo de créditos)
+- [ ] Testar painel do usuário final (lista IPTV, status, dispositivos)
+- [ ] Testar API para apps
+- [ ] Testar restrição de acesso (landing page, revendedor, admin)
+- [ ] Testes de segurança (validações, rate limiting)
 
-### 4. Painel de Clientes Ativados
-- [ ] Criar página "Clientes Ativados" no painel do revendedor
-- [ ] Exibir tabela com: MAC ID, Aplicativo, Lista IPTV, DNS, Data ativação, Data expiração, Status
+---
 
-### 5. Contador de Usuários Ativos
-- [ ] Mostrar total de usuários ativos
-- [ ] Mostrar total de usuários expirados
-- [ ] Mostrar total de conexões usadas
-- [ ] Para plano mensal: mostrar conexões disponíveis e em uso
-
-### 6. Revendedor com Plano Mensal
-- [ ] Implementar tipo de plano (créditos vs mensal)
-- [ ] Gerar código especial de ativação para plano mensal
-- [ ] Definir limite de conexões simultâneas
-
-### 7. Tabela de Preços para Revendedores
-- [ ] Criar seção "Tabela de preços" no painel do revendedor
-- [ ] Exibir aplicativos disponíveis
-- [ ] Exibir preço por ativação
-- [ ] Exibir planos disponíveis
-
-### 8. Sistema de Aplicativos
-- [x] Criar tabela de aplicativos
-- [x] Campos: Nome, Versão, Descrição, Status, Código único
-- [x] Implementar CRUD de aplicativos no admin
-
-### 9. Controle de Aplicativo por Revendedor
-- [ ] Admin define quais apps cada revendedor pode usar
-- [ ] Painel do revendedor mostra apenas apps liberados
-
-### 10. Controle de Revendedor (Admin)
-- [ ] Admin pode ativar/desativar revendedor
-- [ ] Admin pode bloquear revendedor
-- [ ] Admin pode deletar revendedor
-- [ ] Admin define quantidade de apps permitidos
-- [ ] Admin define quais apps o revendedor pode usar
-
-### 11. Gerenciamento de Aplicativos (Admin)
-- [x] Criar aplicativos
-- [ ] Editar aplicativos
-- [x] Excluir aplicativos
-
-### 12. DNS do Revendedor
-- [x] Revendedor mensal pode adicionar DNS 1, 2, 3
-- [x] DNS são utilizadas pelos clientes do revendedor
-
-### 13. Criação de Código pelo Revendedor
-- [x] Botão "Criar código de ativação" no painel do revendedor
-- [ ] Revendedor escolhe: Aplicativo, Quantidade de DNS
-- [x] Sistema gera código de 10 números automaticamente
-
-### 14. API para Smart TV
-- [x] POST /api/app/activate
-- [x] POST /api/app/validate
-- [x] POST /api/app/check
-- [x] Validar MAC ID
-- [x] Validar assinatura ativa
-- [x] Retornar lista IPTV salva
-- [x] Retornar DNS configurada
-- [x] Verificar data de expiração
-
-### 15. Sistema de Validação de MAC
-- [x] Verificar se MAC está ativo
-- [x] Verificar se assinatura está válida
-- [x] Retornar configurações do cliente
-
-### 16. Anti Compartilhamento de Lista
-- [ ] Detectar mesma lista IPTV em múltiplos MACs
-- [ ] Bloquear acesso se detectado
-- [ ] Registrar evento nos logs
-
-### 17. Controle de DNS
-- [x] Registrar DNS utilizada em cada ativação
-- [x] Usar DNS do revendedor ou do sistema
-
-### 18. Logs de Acesso
-- [x] Registrar MAC ID
-- [x] Registrar IP do dispositivo
-- [x] Registrar data e hora do acesso
-- [x] Registrar aplicativo utilizado
-- [x] Registrar status da validação
-
-
-## FASE 16: Gerenciamento Correto de MAC ID com Lista M3U
-- [ ] Corrigir schema: adicionar tabela macActivations com MAC ID, lista M3U, aplicativo, nome
-- [ ] Implementar desconto automático de 1 crédito por MAC ID (válido por 12 meses)
-- [ ] Criar router tRPC para criar MAC ID
-- [ ] Criar router tRPC para listar MAC IDs do revendedor
-- [ ] Criar router tRPC para editar lista M3U de um MAC ID
-- [ ] Criar router tRPC para deletar MAC ID
-- [ ] Reescrever Page 2 do Revendedor com tabela: MAC ID | Lista M3U | Aplicativo | Nome | Ações
-- [ ] Implementar formulário de cadastro de MAC ID no revendedor
-- [ ] Implementar modal de edição de lista M3U por MAC ID
-- [ ] Reescrever Page 2 do Cliente para visualizar seus MAC IDs
-- [ ] Testar fluxo completo de cadastro e edição de MAC ID
+## 📋 Resumo Final
+✅ Sistema multiaplicativo
+✅ Diferenciação completa entre revendedor mensalista e crédito
+✅ Painéis separados, URLs protegidas
+✅ Usuário final só vê: código, usuário, senha e lista IPTV (SEM DNS, SEM e-mail)
+✅ DNS controlada pelo revendedor mensalista, limitada pelo plano
+✅ Anti-compartilhamento de lista IPTV, cada MAC ID = 1 ativação
+✅ Admin controla aplicativos, revendedores e planos
+✅ **ZERO E-MAIL, ZERO OAUTH, ZERO SERVIÇOS EXTERNOS**
+✅ Autenticação 100% local com JWT + username + password

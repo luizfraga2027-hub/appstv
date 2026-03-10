@@ -351,6 +351,20 @@ export async function updateMacActivation(id: number, data: Partial<MacActivatio
   await db.update(macActivations).set(data).where(eq(macActivations.id, id));
 }
 
+export async function updateMacActivationIptvList(macId: string, iptvListUrl: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(macActivations).set({ iptvListUrl }).where(eq(macActivations.macId, macId));
+}
+
+export async function deleteMacActivation(macId: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.delete(macActivations).where(eq(macActivations.macId, macId));
+}
+
 // ===== ACCESS LOGS =====
 
 export async function createAccessLog(data: InsertAccessLog) {

@@ -216,6 +216,7 @@ export const macActivations = mysqlTable("macActivations", {
   customerId: int("customerId"),
   applicationId: int("applicationId").notNull(),
   macId: varchar("macId", { length: 255 }).notNull().unique(),
+  clientName: varchar("clientName", { length: 255 }).notNull(), // Nome para identificar o cliente
   iptvListUrl: text("iptvListUrl"),
   dns1: varchar("dns1", { length: 255 }),
   dns2: varchar("dns2", { length: 255 }),

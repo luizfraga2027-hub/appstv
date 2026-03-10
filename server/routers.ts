@@ -455,6 +455,7 @@ const macActivationsRouter = router({
     .input(
       z.object({
         macId: z.string(),
+        clientName: z.string(),
         applicationId: z.number(),
         iptvListUrl: z.string().optional(),
         dns1: z.string().optional(),
@@ -486,6 +487,7 @@ const macActivationsRouter = router({
         resellerId: reseller.id,
         applicationId: input.applicationId,
         macId: input.macId,
+        clientName: input.clientName || "Cliente",
         iptvListUrl: input.iptvListUrl,
         dns1: input.dns1,
         dns2: input.dns2,
@@ -497,7 +499,7 @@ const macActivationsRouter = router({
       return { success: true };
     }),
 
-  listMacActivations: resellerProcedure.query(async ({ ctx }) => {
+  listByReseller: resellerProcedure.query(async ({ ctx }) => {
     const reseller = await db.getResellerByUserId(ctx.user!.id);
     if (!reseller) {
       throw new TRPCError({ code: "NOT_FOUND", message: "Reseller not found" });
@@ -505,6 +507,40 @@ const macActivationsRouter = router({
 
     return db.getMacActivationsByResellerId(reseller.id);
   }),
+
+  updateIptvList: resellerProcedure
+    .input(z.object({ macId: z.string(), iptvListUrl: z.string() }))
+    .mutation(async ({ input, ctx }) => {
+      const reseller = await db.getResellerByUserId(ctx.user!.id);
+      if (!reseller) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Reseller not found" });
+      }
+
+      const mac = await db.getMacActivationByMacId(input.macId);
+      if (!mac || mac.resellerId !== reseller.id) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "MAC ID not found or not yours" });
+      }
+
+      await db.updateMacActivationIptvList(input.macId, input.iptvListUrl);
+      return { success: true };
+    }),
+
+  deleteMac: resellerProcedure
+    .input(z.object({ macId: z.string() }))
+    .mutation(async ({ input, ctx }) => {
+      const reseller = await db.getResellerByUserId(ctx.user!.id);
+      if (!reseller) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Reseller not found" });
+      }
+
+      const mac = await db.getMacActivationByMacId(input.macId);
+      if (!mac || mac.resellerId !== reseller.id) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "MAC ID not found or not yours" });
+      }
+
+      await db.deleteMacActivation(input.macId);
+      return { success: true };
+    }),
 });
 
 // ===== IPTV ROUTER =====
@@ -561,7 +597,7 @@ export const appRouter = router({
   smartTv: smartTvRouter,
   iptv: iptvRouter,
   applications: applicationsRouter,
-  macActivations: macActivationsRouter,
+  mac: macActivationsRouter,
 });
 
 export type AppRouter = typeof appRouter;

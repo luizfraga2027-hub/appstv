@@ -1,0 +1,1 @@
+ALTER TABLE `macActivations` ADD `clientName` varchar(255) NOT NULL;

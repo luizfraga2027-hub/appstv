@@ -251,3 +251,17 @@
 - [x] Registrar data e hora do acesso
 - [x] Registrar aplicativo utilizado
 - [x] Registrar status da validação
+
+
+## FASE 16: Gerenciamento Correto de MAC ID com Lista M3U
+- [ ] Corrigir schema: adicionar tabela macActivations com MAC ID, lista M3U, aplicativo, nome
+- [ ] Implementar desconto automático de 1 crédito por MAC ID (válido por 12 meses)
+- [ ] Criar router tRPC para criar MAC ID
+- [ ] Criar router tRPC para listar MAC IDs do revendedor
+- [ ] Criar router tRPC para editar lista M3U de um MAC ID
+- [ ] Criar router tRPC para deletar MAC ID
+- [ ] Reescrever Page 2 do Revendedor com tabela: MAC ID | Lista M3U | Aplicativo | Nome | Ações
+- [ ] Implementar formulário de cadastro de MAC ID no revendedor
+- [ ] Implementar modal de edição de lista M3U por MAC ID
+- [ ] Reescrever Page 2 do Cliente para visualizar seus MAC IDs
+- [ ] Testar fluxo completo de cadastro e edição de MAC ID

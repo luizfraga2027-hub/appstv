@@ -406,6 +406,119 @@ const adminRouter = router({
     .query(async ({ input }) => {
       return db.getAccessLogsByMacId(input.macId);
     }),
+
+  createPlan: adminProcedure
+    .input(
+      z.object({
+        name: z.string().min(1),
+        type: z.enum(["credit", "monthly"]),
+        maxApplications: z.number().min(1).default(999),
+        maxDns: z.number().min(1).max(10).default(3),
+        maxConnections: z.number().min(1).default(999),
+        price: z.number().nonnegative(),
+        description: z.string().optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const plan = await db.createPlan({
+        name: input.name,
+        type: input.type,
+        maxApplications: input.maxApplications,
+        maxDns: input.maxDns,
+        maxConnections: input.maxConnections,
+        price: input.price.toString(),
+        description: input.description,
+        status: "active",
+      });
+      return plan;
+    }),
+
+  getAllPlans: adminProcedure.query(async () => {
+    return db.getAllPlans();
+  }),
+
+  getPlanById: adminProcedure
+    .input(z.object({ planId: z.number() }))
+    .query(async ({ input }) => {
+      return db.getPlanById(input.planId);
+    }),
+
+  updatePlan: adminProcedure
+    .input(
+      z.object({
+        planId: z.number(),
+        name: z.string().min(1).optional(),
+        type: z.enum(["credit", "monthly"]).optional(),
+        maxApplications: z.number().min(1).optional(),
+        maxDns: z.number().min(1).max(10).optional(),
+        maxConnections: z.number().min(1).optional(),
+        price: z.number().nonnegative().optional(),
+        description: z.string().optional(),
+        status: z.enum(["active", "inactive"]).optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { planId, ...data } = input;
+      const updateData: any = {};
+      if (data.name) updateData.name = data.name;
+      if (data.type) updateData.type = data.type;
+      if (data.maxApplications) updateData.maxApplications = data.maxApplications;
+      if (data.maxDns) updateData.maxDns = data.maxDns;
+      if (data.maxConnections) updateData.maxConnections = data.maxConnections;
+      if (data.price !== undefined) updateData.price = data.price.toString();
+      if (data.description) updateData.description = data.description;
+      if (data.status) updateData.status = data.status;
+
+      await db.updatePlan(planId, updateData);
+      return { success: true };
+    }),
+
+  deletePlan: adminProcedure
+    .input(z.object({ planId: z.number() }))
+    .mutation(async ({ input }) => {
+      await db.deletePlan(input.planId);
+      return { success: true };
+    }),
+
+  assignPlanToReseller: adminProcedure
+    .input(
+      z.object({
+        resellerId: z.number(),
+        planId: z.number(),
+        dns1: z.string().optional(),
+        dns2: z.string().optional(),
+        dns3: z.string().optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const reseller = await db.getResellerById(input.resellerId);
+      if (!reseller) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Reseller not found" });
+      }
+
+      const plan = await db.getPlanById(input.planId);
+      if (!plan) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Plan not found" });
+      }
+
+      const activationCode = nanoid(12);
+      const resellerPlan = await db.createResellerPlan({
+        resellerId: input.resellerId,
+        planId: input.planId,
+        activationCode,
+        dns1: input.dns1,
+        dns2: input.dns2,
+        dns3: input.dns3,
+      });
+
+      return { resellerPlan, activationCode };
+    }),
+
+  getResellerPlan: adminProcedure
+    .input(z.object({ resellerId: z.number() }))
+    .query(async ({ input }) => {
+      return db.getResellerPlanWithDetails(input.resellerId);
+    }),
 });
 
 // ===== SMART TV API ROUTER =====

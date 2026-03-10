@@ -1,7 +1,7 @@
 import { eq, and } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, resellers, creditTransactions, activationCodes, subscriptions, devices, applications, macActivations, accessLogs, customers, plans, resellerPlans } from "../drizzle/schema";
-import type { User, Reseller, CreditTransaction, ActivationCode, Subscription, Device, Application, InsertApplication, MacActivation, InsertMacActivation, AccessLog, InsertAccessLog, Customer, Plan, InsertPlan, ResellerPlan, InsertResellerPlan } from "../drizzle/schema";
+import { InsertUser, users, resellers, creditTransactions, activationCodes, subscriptions, devices, applications, macActivations, accessLogs, customers, plans, resellerPlans, appCodes } from "../drizzle/schema";
+import type { User, Reseller, CreditTransaction, ActivationCode, Subscription, Device, Application, InsertApplication, MacActivation, InsertMacActivation, AccessLog, InsertAccessLog, Customer, Plan, InsertPlan, ResellerPlan, InsertResellerPlan, AppCode, InsertAppCode } from "../drizzle/schema";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -465,4 +465,52 @@ export async function deleteResellerPlan(resellerId: number) {
   if (!db) throw new Error("Database not available");
 
   await db.delete(resellerPlans).where(eq(resellerPlans.resellerId, resellerId));
+}
+
+
+// ===== APP CODES =====
+
+export async function createAppCode(data: InsertAppCode): Promise<AppCode> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(appCodes).values(data);
+  const newCode = await db.select().from(appCodes).where(eq(appCodes.id, result[0].insertId as number)).limit(1);
+  return newCode[0]!;
+}
+
+export async function getAppCodeByCode(code: string): Promise<AppCode | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select().from(appCodes).where(eq(appCodes.code, code)).limit(1);
+  return result[0];
+}
+
+export async function getAppCodesByResellerId(resellerId: number): Promise<AppCode[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(appCodes).where(eq(appCodes.resellerId, resellerId));
+}
+
+export async function getAppCodesByApplicationId(applicationId: number): Promise<AppCode[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(appCodes).where(eq(appCodes.applicationId, applicationId));
+}
+
+export async function updateAppCode(id: number, data: Partial<AppCode>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(appCodes).set(data).where(eq(appCodes.id, id));
+}
+
+export async function deleteAppCode(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.delete(appCodes).where(eq(appCodes.id, id));
 }

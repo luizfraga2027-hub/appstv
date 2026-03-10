@@ -446,6 +446,47 @@ const applicationsRouter = router({
       await db.deleteApplication(input.appId);
       return { success: true };
     }),
+
+  createAppCode: resellerProcedure
+    .input(
+      z.object({
+        applicationId: z.number(),
+        dnsCount: z.number().min(1).max(3).default(3),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const reseller = await db.getResellerByUserId(ctx.user!.id);
+      if (!reseller) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Reseller not found" });
+      }
+
+      const code = nanoid(10);
+      await db.createAppCode({
+        code,
+        resellerId: reseller.id,
+        applicationId: input.applicationId,
+        dnsCount: input.dnsCount,
+        status: "active",
+      });
+      return { code, success: true };
+    }),
+
+  getAppCodesByReseller: resellerProcedure.query(async ({ ctx }) => {
+    const reseller = await db.getResellerByUserId(ctx.user!.id);
+    if (!reseller) return [];
+    return db.getAppCodesByResellerId(reseller.id);
+  }),
+
+  deleteAppCode: resellerProcedure
+    .input(z.object({ codeId: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+      const reseller = await db.getResellerByUserId(ctx.user!.id);
+      if (!reseller) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Reseller not found" });
+      }
+      await db.deleteAppCode(input.codeId);
+      return { success: true };
+    }),
 });
 
 // ===== MAC ACTIVATIONS ROUTER =====

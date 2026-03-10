@@ -310,3 +310,35 @@ export const accessLogsRelations = relations(accessLogs, ({ one }) => ({
     references: [applications.id],
   }),
 }));
+
+
+/**
+ * App Codes - Codigos de ativacao para revendedores mensalistas
+ */
+export const appCodes = mysqlTable("appCodes", {
+  id: int("id").autoincrement().primaryKey(),
+  code: varchar("code", { length: 64 }).notNull().unique(),
+  resellerId: int("resellerId").notNull(),
+  applicationId: int("applicationId").notNull(),
+  dnsCount: int("dnsCount").default(3).notNull(),
+  status: mysqlEnum("status", ["active", "inactive", "expired"]).default("active").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type AppCode = typeof appCodes.$inferSelect;
+export type InsertAppCode = typeof appCodes.$inferInsert;
+
+/**
+ * Relations for appCodes
+ */
+export const appCodesRelations = relations(appCodes, ({ one }) => ({
+  reseller: one(resellers, {
+    fields: [appCodes.resellerId],
+    references: [resellers.id],
+  }),
+  application: one(applications, {
+    fields: [appCodes.applicationId],
+    references: [applications.id],
+  }),
+}));

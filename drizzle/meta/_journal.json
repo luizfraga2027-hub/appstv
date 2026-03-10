@@ -43,6 +43,13 @@
       "when": 1773111610516,
       "tag": "0005_peaceful_shard",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1773111859531,
+      "tag": "0006_legal_odin",
+      "breakpoints": true
     }
   ]
 }

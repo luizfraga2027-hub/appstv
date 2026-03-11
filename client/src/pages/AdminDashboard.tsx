@@ -25,8 +25,8 @@ export default function AdminDashboard() {
 
   // Fetch statistics
   const { data: stats, isLoading: statsLoading } = trpc.admin.getStatistics.useQuery();
-  const { data: users, isLoading: usersLoading } = trpc.admin.getAllUsers.useQuery();
-  const { data: resellers, isLoading: resellersLoading } = trpc.admin.getAllResellers.useQuery();
+  const { data: users, isLoading: usersLoading, refetch: refetchUsers } = trpc.admin.getAllUsers.useQuery();
+  const { data: resellers, isLoading: resellersLoading, refetch: refetchResellers } = trpc.admin.getAllResellers.useQuery();
   const { data: plans, isLoading: plansLoading } = trpc.admin.getAllPlans.useQuery();
   
   // Form states
@@ -50,15 +50,78 @@ export default function AdminDashboard() {
   const [appDescription, setAppDescription] = useState("");
   const [appApiUrl, setAppApiUrl] = useState("");
 
-  // Add credits mutation
+  // Mutations
   const addCreditsMutation = trpc.admin.addCreditsToReseller.useMutation({
     onSuccess: () => {
       toast.success("Créditos adicionados com sucesso!");
       setCreditAmount("");
       setSelectedResellerId(null);
+      refetchResellers();
     },
     onError: (error) => {
       toast.error(error.message || "Erro ao adicionar créditos");
+    },
+  });
+
+  const deleteUserMutation = trpc.admin.deleteUser.useMutation({
+    onSuccess: () => {
+      toast.success("Usuário deletado com sucesso!");
+      refetchUsers();
+    },
+    onError: (error) => {
+      toast.error(error.message || "Erro ao deletar usuário");
+    },
+  });
+
+  const deleteResellerMutation = trpc.admin.deleteReseller.useMutation({
+    onSuccess: () => {
+      toast.success("Revendedor deletado com sucesso!");
+      refetchResellers();
+      refetchUsers();
+    },
+    onError: (error) => {
+      toast.error(error.message || "Erro ao deletar revendedor");
+    },
+  });
+
+  const blockUserMutation = trpc.admin.blockUser.useMutation({
+    onSuccess: () => {
+      toast.success("Usuário bloqueado com sucesso!");
+      refetchUsers();
+    },
+    onError: (error) => {
+      toast.error(error.message || "Erro ao bloquear usuário");
+    },
+  });
+
+  const unblockUserMutation = trpc.admin.unblockUser.useMutation({
+    onSuccess: () => {
+      toast.success("Usuário desbloqueado com sucesso!");
+      refetchUsers();
+    },
+    onError: (error) => {
+      toast.error(error.message || "Erro ao desbloquear usuário");
+    },
+  });
+
+  const createPlanMutation = trpc.admin.createPlan.useMutation({
+    onSuccess: () => {
+      toast.success("Plano criado com sucesso!");
+      setPlanName("");
+      setPlanPrice("");
+      setPlanDescription("");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Erro ao criar plano");
+    },
+  });
+
+  const deletePlanMutation = trpc.admin.deletePlan.useMutation({
+    onSuccess: () => {
+      toast.success("Plano deletado com sucesso!");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Erro ao deletar plano");
     },
   });
 
@@ -75,17 +138,25 @@ export default function AdminDashboard() {
     });
   };
 
-  const createPlanMutation = trpc.admin.createPlan.useMutation({
-    onSuccess: () => {
-      toast.success("Plano criado com sucesso!");
-      setPlanName("");
-      setPlanPrice("");
-      setPlanDescription("");
-    },
-    onError: (error) => {
-      toast.error(error.message || "Erro ao criar plano");
-    },
-  });
+  const handleDeleteUser = (userId: number) => {
+    if (confirm("Tem certeza que deseja deletar este usuário?")) {
+      deleteUserMutation.mutate({ userId });
+    }
+  };
+
+  const handleDeleteReseller = (resellerId: number) => {
+    if (confirm("Tem certeza que deseja deletar este revendedor?")) {
+      deleteResellerMutation.mutate({ resellerId });
+    }
+  };
+
+  const handleBlockUser = (userId: number, currentStatus: string) => {
+    if (currentStatus === "active") {
+      blockUserMutation.mutate({ userId });
+    } else {
+      unblockUserMutation.mutate({ userId });
+    }
+  };
 
   const handleCreatePlan = () => {
     if (!planName || !planPrice) {
@@ -101,39 +172,6 @@ export default function AdminDashboard() {
       maxDns: parseInt(planMaxDns),
       description: planDescription,
     });
-  };
-
-  const deletePlanMutation = trpc.admin.deletePlan.useMutation({
-    onSuccess: () => {
-      toast.success("Plano deletado com sucesso!");
-    },
-    onError: (error) => {
-      toast.error(error.message || "Erro ao deletar plano");
-    },
-  });
-
-  const handleCreateReseller = () => {
-    if (!resellerCompanyName || !resellerPlanId) {
-      toast.error("Preencha todos os campos obrigatórios");
-      return;
-    }
-    toast.success(`Revendedor "${resellerCompanyName}" criado com sucesso!`);
-    setResellerCompanyName("");
-    setResellerInitialCredits("1000");
-    setResellerPlanId(null);
-  };
-
-  const handleCreateApp = () => {
-    if (!appName || !appCode) {
-      toast.error("Preencha todos os campos obrigatórios");
-      return;
-    }
-    toast.success(`Aplicativo "${appName}" criado com sucesso!`);
-    setAppName("");
-    setAppVersion("");
-    setAppCode("");
-    setAppDescription("");
-    setAppApiUrl("");
   };
 
   return (
@@ -237,16 +275,6 @@ export default function AdminDashboard() {
             }`}
           >
             Aplicativos
-          </button>
-          <button
-            onClick={() => setActiveTab("codes")}
-            className={`px-4 py-2 font-medium border-b-2 transition-colors ${
-              activeTab === "codes"
-                ? "border-accent text-accent"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Códigos
           </button>
         </div>
 
@@ -451,137 +479,67 @@ export default function AdminDashboard() {
 
         {/* Resellers Tab */}
         {activeTab === "resellers" && (
-          <div className="space-y-6">
-            {/* Create Reseller Section */}
-            <Card className="p-6 border-border/50">
-              <h2 className="text-xl font-bold mb-6">Criar Novo Revendedor</h2>
-              <div className="grid md:grid-cols-2 gap-6 mb-6">
-                <div>
-                  <Label className="text-sm font-medium mb-2 block">Nome da Empresa</Label>
-                  <Input
-                    placeholder="Nome da empresa"
-                    value={resellerCompanyName}
-                    onChange={(e) => setResellerCompanyName(e.target.value)}
-                    className="bg-input border-border/50 focus:border-accent/50"
-                  />
-                </div>
-                <div>
-                  <Label className="text-sm font-medium mb-2 block">Tipo de Revendedor</Label>
-                  <select
-                    value={resellerType}
-                    onChange={(e) => setResellerType(e.target.value as "credit" | "monthly")}
-                    className="w-full px-3 py-2 border border-border/50 rounded-lg bg-input focus:outline-none focus:border-accent/50"
-                  >
-                    <option value="credit">Crédito</option>
-                    <option value="monthly">Mensalista</option>
-                  </select>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium mb-2 block">Créditos Iniciais</Label>
-                  <Input
-                    type="number"
-                    placeholder="1000"
-                    value={resellerInitialCredits}
-                    onChange={(e) => setResellerInitialCredits(e.target.value)}
-                    className="bg-input border-border/50 focus:border-accent/50"
-                    min="0"
-                    step="0.01"
-                  />
-                </div>
-                <div>
-                  <Label className="text-sm font-medium mb-2 block">Plano</Label>
-                  <select
-                    value={resellerPlanId || ""}
-                    onChange={(e) => setResellerPlanId(e.target.value ? parseInt(e.target.value) : null)}
-                    className="w-full px-3 py-2 border border-border/50 rounded-lg bg-input focus:outline-none focus:border-accent/50"
-                  >
-                    <option value="">Selecione um plano</option>
-                    {plans?.map((plan) => (
-                      <option key={plan.id} value={plan.id}>
-                        {plan.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+          <Card className="p-6 border-border/50">
+            <h2 className="text-xl font-bold mb-6">Revendedores</h2>
+            {resellersLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin" />
               </div>
-              <Button
-                onClick={handleCreateReseller}
-                className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Criar Revendedor
-              </Button>
-            </Card>
-
-            {/* Resellers List */}
-            <Card className="p-6 border-border/50">
-              <h2 className="text-xl font-bold mb-6">Revendedores Existentes</h2>
-              {resellersLoading ? (
-                <div className="flex justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin" />
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-border/50">
-                        <th className="text-left py-3 px-4 font-semibold">Empresa</th>
-                        <th className="text-left py-3 px-4 font-semibold">Saldo de Créditos</th>
-                        <th className="text-left py-3 px-4 font-semibold">Créditos Usados</th>
-                        <th className="text-left py-3 px-4 font-semibold">Status</th>
-                        <th className="text-left py-3 px-4 font-semibold">Ações</th>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border/50">
+                      <th className="text-left py-3 px-4 font-semibold">Empresa</th>
+                      <th className="text-left py-3 px-4 font-semibold">Saldo de Créditos</th>
+                      <th className="text-left py-3 px-4 font-semibold">Créditos Usados</th>
+                      <th className="text-left py-3 px-4 font-semibold">Status</th>
+                      <th className="text-left py-3 px-4 font-semibold">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {resellers?.map((reseller) => (
+                      <tr key={reseller.id} className="border-b border-border/50 hover:bg-accent/5">
+                        <td className="py-3 px-4">{reseller.companyName}</td>
+                        <td className="py-3 px-4 font-semibold">{parseFloat(reseller.creditBalance.toString()).toFixed(2)}</td>
+                        <td className="py-3 px-4">{parseFloat(reseller.totalCreditsUsed.toString()).toFixed(2)}</td>
+                        <td className="py-3 px-4">
+                          <span
+                            className={`px-2 py-1 rounded text-xs font-medium ${
+                              reseller.status === "active"
+                                ? "bg-green-500/10 text-green-600"
+                                : reseller.status === "suspended"
+                                  ? "bg-red-500/10 text-red-600"
+                                  : "bg-yellow-500/10 text-yellow-600"
+                            }`}
+                          >
+                            {reseller.status === "active" ? "Ativo" : reseller.status === "suspended" ? "Suspenso" : "Inativo"}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 flex gap-2">
+                          <button
+                            onClick={() => toast.info("Editar revendedor: " + reseller.companyName)}
+                            className="text-accent hover:text-accent/80 transition-colors"
+                            title="Editar"
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteReseller(reseller.id)}
+                            className="text-red-500 hover:text-red-600 transition-colors"
+                            title="Deletar"
+                            disabled={deleteResellerMutation.isPending}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {resellers?.map((reseller) => (
-                        <tr key={reseller.id} className="border-b border-border/50 hover:bg-accent/5">
-                          <td className="py-3 px-4">{reseller.companyName}</td>
-                          <td className="py-3 px-4 font-semibold">{parseFloat(reseller.creditBalance.toString()).toFixed(2)}</td>
-                          <td className="py-3 px-4">{parseFloat(reseller.totalCreditsUsed.toString()).toFixed(2)}</td>
-                          <td className="py-3 px-4">
-                            <span
-                              className={`px-2 py-1 rounded text-xs font-medium ${
-                                reseller.status === "active"
-                                  ? "bg-green-500/10 text-green-600"
-                                  : reseller.status === "suspended"
-                                    ? "bg-red-500/10 text-red-600"
-                                    : "bg-yellow-500/10 text-yellow-600"
-                              }`}
-                            >
-                              {reseller.status === "active" ? "Ativo" : reseller.status === "suspended" ? "Suspenso" : "Inativo"}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 flex gap-2">
-                            <button
-                              onClick={() => toast.info("Editar revendedor: " + reseller.companyName)}
-                              className="text-accent hover:text-accent/80 transition-colors"
-                              title="Editar"
-                            >
-                              <Edit2 className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={() => toast.success(reseller.status === "active" ? "Revendedor bloqueado!" : "Revendedor desbloqueado!")}
-                              className="text-yellow-500 hover:text-yellow-600 transition-colors"
-                              title="Bloquear/Desbloquear"
-                            >
-                              🔒
-                            </button>
-                            <button
-                              onClick={() => toast.error("Revendedor deletado!")}
-                              className="text-red-500 hover:text-red-600 transition-colors"
-                              title="Deletar"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </Card>
-          </div>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Card>
         )}
 
         {/* Customers Tab */}
@@ -629,23 +587,18 @@ export default function AdminDashboard() {
                         </td>
                         <td className="py-3 px-4 flex gap-2">
                           <button
-                            onClick={() => toast.info("Transferir cliente: " + u.username)}
-                            className="text-accent hover:text-accent/80 transition-colors"
-                            title="Transferir"
-                          >
-                            ↔️
-                          </button>
-                          <button
-                            onClick={() => toast.success(u.status === "active" ? "Cliente bloqueado!" : "Cliente desbloqueado!")}
+                            onClick={() => handleBlockUser(u.id, u.status)}
                             className="text-yellow-500 hover:text-yellow-600 transition-colors"
                             title="Bloquear/Desbloquear"
+                            disabled={blockUserMutation.isPending || unblockUserMutation.isPending}
                           >
                             🔒
                           </button>
                           <button
-                            onClick={() => toast.error("Cliente deletado!")}
+                            onClick={() => handleDeleteUser(u.id)}
                             className="text-red-500 hover:text-red-600 transition-colors"
                             title="Deletar"
+                            disabled={deleteUserMutation.isPending}
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -661,190 +614,62 @@ export default function AdminDashboard() {
 
         {/* Apps Tab */}
         {activeTab === "apps" && (
-          <div className="space-y-6">
-            {/* Create App Section */}
-            <Card className="p-6 border-border/50">
-              <h2 className="text-xl font-bold mb-6">Criar Novo Aplicativo</h2>
-              <div className="grid md:grid-cols-2 gap-6 mb-6">
-                <div>
-                  <Label className="text-sm font-medium mb-2 block">Nome do App</Label>
-                  <Input
-                    placeholder="Ex: Netflix"
-                    value={appName}
-                    onChange={(e) => setAppName(e.target.value)}
-                    className="bg-input border-border/50 focus:border-accent/50"
-                  />
-                </div>
-                <div>
-                  <Label className="text-sm font-medium mb-2 block">Versão</Label>
-                  <Input
-                    placeholder="1.0.0"
-                    value={appVersion}
-                    onChange={(e) => setAppVersion(e.target.value)}
-                    className="bg-input border-border/50 focus:border-accent/50"
-                  />
-                </div>
-                <div>
-                  <Label className="text-sm font-medium mb-2 block">Código</Label>
-                  <Input
-                    placeholder="APP001"
-                    value={appCode}
-                    onChange={(e) => setAppCode(e.target.value)}
-                    className="bg-input border-border/50 focus:border-accent/50"
-                  />
-                </div>
-                <div>
-                  <Label className="text-sm font-medium mb-2 block">URL da API</Label>
-                  <Input
-                    placeholder="https://api.example.com"
-                    value={appApiUrl}
-                    onChange={(e) => setAppApiUrl(e.target.value)}
-                    className="bg-input border-border/50 focus:border-accent/50"
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <Label className="text-sm font-medium mb-2 block">Descrição</Label>
-                  <Input
-                    placeholder="Descrição do aplicativo"
-                    value={appDescription}
-                    onChange={(e) => setAppDescription(e.target.value)}
-                    className="bg-input border-border/50 focus:border-accent/50"
-                  />
-                </div>
-              </div>
-              <Button
-                onClick={handleCreateApp}
-                className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Criar Aplicativo
-              </Button>
-            </Card>
-
-            {/* Apps List */}
-            <Card className="p-6 border-border/50">
-              <h2 className="text-xl font-bold mb-6">Aplicativos Existentes</h2>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border/50">
-                      <th className="text-left py-3 px-4 font-semibold">Nome</th>
-                      <th className="text-left py-3 px-4 font-semibold">Código</th>
-                      <th className="text-left py-3 px-4 font-semibold">Versão</th>
-                      <th className="text-left py-3 px-4 font-semibold">Status</th>
-                      <th className="text-left py-3 px-4 font-semibold">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className="border-b border-border/50 hover:bg-accent/5">
-                      <td className="py-3 px-4">Exemplo App 1</td>
-                      <td className="py-3 px-4">APP001</td>
-                      <td className="py-3 px-4">1.0.0</td>
-                      <td className="py-3 px-4">
-                        <span className="px-2 py-1 bg-green-500/10 text-green-600 rounded text-xs font-medium">
-                          Ativo
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 flex gap-2">
-                        <button
-                          onClick={() => toast.info("Editar app")}
-                          className="text-accent hover:text-accent/80 transition-colors"
-                        >
-                          <Edit2 className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => toast.success("App desativado!")}
-                          className="text-yellow-500 hover:text-yellow-600 transition-colors"
-                        >
-                          ⏸️
-                        </button>
-                        <button
-                          onClick={() => toast.error("App deletado!")}
-                          className="text-red-500 hover:text-red-600 transition-colors"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </Card>
-          </div>
-        )}
-
-        {/* Codes Tab */}
-        {activeTab === "codes" && (
           <Card className="p-6 border-border/50">
-            <h2 className="text-xl font-bold mb-6">Gestão de Códigos e DNS</h2>
-            <div className="space-y-4">
-              <div className="grid md:grid-cols-3 gap-4">
-                <div>
-                  <Label className="text-sm font-medium mb-2 block">Aplicativo</Label>
-                  <select className="w-full px-3 py-2 border border-border/50 rounded-lg bg-input focus:outline-none focus:border-accent/50">
-                    <option>Selecione um app</option>
-                    <option>Exemplo App 1</option>
-                  </select>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium mb-2 block">Revendedor</Label>
-                  <select className="w-full px-3 py-2 border border-border/50 rounded-lg bg-input focus:outline-none focus:border-accent/50">
-                    <option>Selecione um revendedor</option>
-                    {resellers?.map((r) => (
-                      <option key={r.id} value={r.id}>
-                        {r.companyName}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium mb-2 block">Máx DNS</Label>
-                  <Input
-                    type="number"
-                    placeholder="3"
-                    defaultValue="3"
-                    min="1"
-                    max="10"
-                    className="bg-input border-border/50 focus:border-accent/50"
-                  />
-                </div>
+            <h2 className="text-xl font-bold mb-6">Aplicativos</h2>
+            <div className="grid md:grid-cols-2 gap-6 mb-6">
+              <div>
+                <Label className="text-sm font-medium mb-2 block">Nome do App</Label>
+                <Input
+                  placeholder="Ex: Netflix"
+                  value={appName}
+                  onChange={(e) => setAppName(e.target.value)}
+                  className="bg-input border-border/50 focus:border-accent/50"
+                />
               </div>
-              <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
-                <Plus className="mr-2 h-4 w-4" />
-                Configurar Códigos
-              </Button>
-            </div>
-
-            {/* Codes List */}
-            <div className="mt-8">
-              <h3 className="text-lg font-semibold mb-4">Códigos Existentes</h3>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border/50">
-                      <th className="text-left py-3 px-4 font-semibold">Código</th>
-                      <th className="text-left py-3 px-4 font-semibold">Aplicativo</th>
-                      <th className="text-left py-3 px-4 font-semibold">Revendedor</th>
-                      <th className="text-left py-3 px-4 font-semibold">DNS Máximo</th>
-                      <th className="text-left py-3 px-4 font-semibold">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className="border-b border-border/50 hover:bg-accent/5">
-                      <td className="py-3 px-4">CODE001</td>
-                      <td className="py-3 px-4">Exemplo App 1</td>
-                      <td className="py-3 px-4">Exemplo Revendedor</td>
-                      <td className="py-3 px-4">3</td>
-                      <td className="py-3 px-4">
-                        <span className="px-2 py-1 bg-green-500/10 text-green-600 rounded text-xs font-medium">
-                          Ativo
-                        </span>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+              <div>
+                <Label className="text-sm font-medium mb-2 block">Versão</Label>
+                <Input
+                  placeholder="1.0.0"
+                  value={appVersion}
+                  onChange={(e) => setAppVersion(e.target.value)}
+                  className="bg-input border-border/50 focus:border-accent/50"
+                />
+              </div>
+              <div>
+                <Label className="text-sm font-medium mb-2 block">Código</Label>
+                <Input
+                  placeholder="APP001"
+                  value={appCode}
+                  onChange={(e) => setAppCode(e.target.value)}
+                  className="bg-input border-border/50 focus:border-accent/50"
+                />
+              </div>
+              <div>
+                <Label className="text-sm font-medium mb-2 block">URL da API</Label>
+                <Input
+                  placeholder="https://api.example.com"
+                  value={appApiUrl}
+                  onChange={(e) => setAppApiUrl(e.target.value)}
+                  className="bg-input border-border/50 focus:border-accent/50"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <Label className="text-sm font-medium mb-2 block">Descrição</Label>
+                <Input
+                  placeholder="Descrição do aplicativo"
+                  value={appDescription}
+                  onChange={(e) => setAppDescription(e.target.value)}
+                  className="bg-input border-border/50 focus:border-accent/50"
+                />
               </div>
             </div>
+            <Button
+              onClick={() => toast.success("Aplicativo criado com sucesso!")}
+              className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Criar Aplicativo
+            </Button>
           </Card>
         )}
       </div>

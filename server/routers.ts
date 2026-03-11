@@ -519,6 +519,52 @@ const adminRouter = router({
     .query(async ({ input }) => {
       return db.getResellerPlanWithDetails(input.resellerId);
     }),
+
+  deleteUser: adminProcedure
+    .input(z.object({ userId: z.number() }))
+    .mutation(async ({ input }) => {
+      const user = await db.getUserById(input.userId);
+      if (!user) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+      }
+
+      // Delete related data first
+      if (user.role === "reseller") {
+        const reseller = await db.getResellerByUserId(input.userId);
+        if (reseller) {
+          await db.deleteReseller(reseller.id);
+        }
+      } else if (user.role === "customer") {
+        const customer = await db.getCustomerByUserId(input.userId);
+        if (customer) {
+          await db.deleteCustomer(customer.id);
+        }
+      }
+
+      // Delete user
+      await db.deleteUser(input.userId);
+      return { success: true };
+    }),
+
+  deleteReseller: adminProcedure
+    .input(z.object({ resellerId: z.number() }))
+    .mutation(async ({ input }) => {
+      const reseller = await db.getResellerById(input.resellerId);
+      if (!reseller) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Reseller not found" });
+      }
+
+      // Delete reseller and related data
+      await db.deleteReseller(input.resellerId);
+      
+      // Delete associated user
+      const user = await db.getUserById(reseller.userId);
+      if (user) {
+        await db.deleteUser(reseller.userId);
+      }
+
+      return { success: true };
+    }),
 });
 
 // ===== SMART TV API ROUTER =====

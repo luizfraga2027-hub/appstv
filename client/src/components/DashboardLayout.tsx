@@ -21,15 +21,35 @@ import {
 } from "@/components/ui/sidebar";
 import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Users } from "lucide-react";
+import { useInactivityTimeout } from "@/hooks/useInactivityTimeout";
+import { LayoutDashboard, LogOut, PanelLeft, Users, Settings } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 
-const menuItems = [
-  { icon: LayoutDashboard, label: "Dashboard", path: "/" },
-];
+const getMenuItems = (userRole?: string) => {
+  const baseItems = [
+    { icon: LayoutDashboard, label: "Dashboard", path: "/" },
+  ];
+
+  if (userRole === "admin") {
+    return [
+      ...baseItems,
+      { icon: Users, label: "Usuários", path: "/admin" },
+      { icon: Settings, label: "Configurações", path: "/admin/settings" },
+    ];
+  }
+
+  if (userRole === "reseller") {
+    return [
+      ...baseItems,
+      { icon: Users, label: "Meus Clientes", path: "/reseller" },
+    ];
+  }
+
+  return baseItems;
+};
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
 const DEFAULT_WIDTH = 280;
@@ -111,8 +131,14 @@ function DashboardLayoutContent({
   const isCollapsed = state === "collapsed";
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
+  const menuItems = getMenuItems(user?.role);
   const activeMenuItem = menuItems.find(item => item.path === location);
   const isMobile = useIsMobile();
+
+  // Auto-logout on inactivity (3 minutes)
+  useInactivityTimeout(() => {
+    logout();
+  });
 
   useEffect(() => {
     if (isCollapsed) {
@@ -200,20 +226,23 @@ function DashboardLayoutContent({
             </SidebarMenu>
           </SidebarContent>
 
-          <SidebarFooter className="p-3">
+          <SidebarFooter className="p-3 space-y-3 border-t border-border/50">
+            <div className="text-xs px-2 py-2 rounded-lg bg-accent/10">
+              <p className="font-semibold text-foreground">{user?.name}</p>
+              <p className="text-muted-foreground mt-1">
+                {user?.role === "admin" ? "👤 Administrador" : user?.role === "reseller" ? "🏢 Revendedor" : "👥 Cliente"}
+              </p>
+            </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-3 rounded-lg px-1 py-1 hover:bg-accent/50 transition-colors w-full text-left group-data-[collapsible=icon]:justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                  <Avatar className="h-9 w-9 border shrink-0">
+                <button className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-accent/50 transition-colors w-full text-left group-data-[collapsible=icon]:justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                  <Avatar className="h-8 w-8 border shrink-0">
                     <AvatarFallback className="text-xs font-medium">
                       {user?.name?.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
                     <p className="text-sm font-medium truncate leading-none">
-                      {user?.name || "-"}
-                    </p>
-                    <p className="text-xs text-muted-foreground truncate mt-1.5">
                       {user?.username || "-"}
                     </p>
                   </div>
@@ -225,7 +254,7 @@ function DashboardLayoutContent({
                   className="cursor-pointer text-destructive focus:text-destructive"
                 >
                   <LogOut className="mr-2 h-4 w-4" />
-                  <span>Sign out</span>
+                  <span>Sair</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -247,16 +276,16 @@ function DashboardLayoutContent({
             <div className="flex items-center gap-2">
               <SidebarTrigger className="h-9 w-9 rounded-lg bg-background" />
               <div className="flex items-center gap-3">
-                <div className="flex flex-col gap-1">
-                  <span className="tracking-tight text-foreground">
-                    {activeMenuItem?.label ?? "Menu"}
-                  </span>
-                </div>
+                <div className="flex flex-col gap-1"></div>
               </div>
             </div>
           </div>
         )}
-        <main className="flex-1 p-4">{children}</main>
+        <main className="flex-1 overflow-y-auto">
+          <div className="p-6 md:p-8">
+            {children}
+          </div>
+        </main>
       </SidebarInset>
     </>
   );

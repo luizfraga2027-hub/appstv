@@ -558,3 +558,44 @@ export async function deleteAppCode(id: number) {
 
   await db.delete(appCodes).where(eq(appCodes.id, id));
 }
+
+
+// ===== DELETE QUERIES =====
+
+export async function deleteUser(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.delete(users).where(eq(users.id, id));
+  cache.delete(`user_${id}`);
+}
+
+export async function deleteReseller(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Delete related data
+  await db.delete(creditTransactions).where(eq(creditTransactions.resellerId, id));
+  await db.delete(activationCodes).where(eq(activationCodes.resellerId, id));
+  await db.delete(resellerPlans).where(eq(resellerPlans.resellerId, id));
+  
+  // Delete reseller
+  await db.delete(resellers).where(eq(resellers.id, id));
+  cache.delete(`reseller_${id}`);
+}
+
+export async function deleteCustomer(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Delete related subscriptions and devices
+  const subs = await db.select().from(subscriptions).where(eq(subscriptions.customerId, id));
+  for (const sub of subs) {
+    await db.delete(devices).where(eq(devices.subscriptionId, sub.id));
+  }
+  await db.delete(subscriptions).where(eq(subscriptions.customerId, id));
+  
+  // Delete customer
+  await db.delete(customers).where(eq(customers.id, id));
+  cache.delete(`customer_${id}`);
+}

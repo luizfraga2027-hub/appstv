@@ -142,6 +142,29 @@ export default function AdminDashboard() {
     },
   });
 
+  const createAppMutation = trpc.admin.createApp.useMutation({
+    onSuccess: () => {
+      toast.success("Aplicativo criado com sucesso!");
+      setAppName("");
+      setAppVersion("");
+      setAppCode("");
+      setAppDescription("");
+      setAppApiUrl("");
+    },
+    onError: (error: any) => {
+      toast.error(error?.message || "Erro ao criar aplicativo");
+    },
+  });
+
+  const deleteAppMutation = trpc.admin.deleteApp.useMutation({
+    onSuccess: () => {
+      toast.success("Aplicativo deletado com sucesso!");
+    },
+    onError: (error: any) => {
+      toast.error(error?.message || "Erro ao deletar aplicativo");
+    },
+  });
+
   const handleAddCredits = () => {
     if (!selectedResellerId || !creditAmount) {
       toast.error("Selecione um revendedor e insira o valor");
@@ -745,11 +768,32 @@ export default function AdminDashboard() {
               </div>
             </div>
             <Button
-              onClick={() => toast.success("Aplicativo criado com sucesso!")}
+              onClick={() => {
+                if (!appName || !appCode || !appVersion) {
+                  toast.error("Preencha todos os campos obrigatórios");
+                  return;
+                }
+                createAppMutation.mutate({
+                  name: appName,
+                  code: appCode,
+                  version: appVersion,
+                  description: appDescription,
+                });
+              }}
+              disabled={createAppMutation.isPending}
               className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"
             >
-              <Plus className="mr-2 h-4 w-4" />
-              Criar Aplicativo
+              {createAppMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Criando...
+                </>
+              ) : (
+                <>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Criar Aplicativo
+                </>
+              )}
             </Button>
           </Card>
         )}

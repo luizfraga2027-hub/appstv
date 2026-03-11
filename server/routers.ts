@@ -591,6 +591,33 @@ const adminRouter = router({
 
       return { success: true };
     }),
+
+  createApp: adminProcedure
+    .input(
+      z.object({
+        name: z.string().min(1),
+        code: z.string().min(1),
+        version: z.string().min(1),
+        description: z.string().optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      await db.createApplication({
+        name: input.name,
+        code: input.code,
+        version: input.version,
+        description: input.description,
+        status: "active",
+      });
+      return { success: true };
+    }),
+
+  deleteApp: adminProcedure
+    .input(z.object({ appId: z.number() }))
+    .mutation(async ({ input }) => {
+      await db.deleteApplication(input.appId);
+      return { success: true };
+    }),
 });
 
 // ===== SMART TV API ROUTER =====

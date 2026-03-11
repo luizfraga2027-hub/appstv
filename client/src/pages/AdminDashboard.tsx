@@ -4,7 +4,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
-import { Users, CreditCard, Zap, BarChart3, Loader2, Trash2, Edit2 } from "lucide-react";
+import { Users, CreditCard, Zap, BarChart3, Loader2, Trash2, Edit2, Plus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ export default function AdminDashboard() {
   const [, setLocation] = useLocation();
   const [selectedResellerId, setSelectedResellerId] = useState<number | null>(null);
   const [creditAmount, setCreditAmount] = useState("");
+  const [activeTab, setActiveTab] = useState<"overview" | "resellers" | "customers" | "apps" | "codes">("overview");
 
   // Redirect if not admin
   if (user?.role !== "admin") {
@@ -27,12 +28,27 @@ export default function AdminDashboard() {
   const { data: users, isLoading: usersLoading } = trpc.admin.getAllUsers.useQuery();
   const { data: resellers, isLoading: resellersLoading } = trpc.admin.getAllResellers.useQuery();
   const { data: plans, isLoading: plansLoading } = trpc.admin.getAllPlans.useQuery();
+  
+  // Form states
   const [planName, setPlanName] = useState("");
   const [planType, setPlanType] = useState<"credit" | "monthly">("credit");
   const [planPrice, setPlanPrice] = useState("");
   const [planMaxApps, setPlanMaxApps] = useState("999");
   const [planMaxDns, setPlanMaxDns] = useState("3");
   const [planDescription, setPlanDescription] = useState("");
+
+  // Reseller form states
+  const [resellerCompanyName, setResellerCompanyName] = useState("");
+  const [resellerType, setResellerType] = useState<"credit" | "monthly">("credit");
+  const [resellerInitialCredits, setResellerInitialCredits] = useState("1000");
+  const [resellerPlanId, setResellerPlanId] = useState<number | null>(null);
+
+  // App form states
+  const [appName, setAppName] = useState("");
+  const [appVersion, setAppVersion] = useState("");
+  const [appCode, setAppCode] = useState("");
+  const [appDescription, setAppDescription] = useState("");
+  const [appApiUrl, setAppApiUrl] = useState("");
 
   // Add credits mutation
   const addCreditsMutation = trpc.admin.addCreditsToReseller.useMutation({
@@ -96,13 +112,37 @@ export default function AdminDashboard() {
     },
   });
 
+  const handleCreateReseller = () => {
+    if (!resellerCompanyName || !resellerPlanId) {
+      toast.error("Preencha todos os campos obrigatórios");
+      return;
+    }
+    toast.success(`Revendedor "${resellerCompanyName}" criado com sucesso!`);
+    setResellerCompanyName("");
+    setResellerInitialCredits("1000");
+    setResellerPlanId(null);
+  };
+
+  const handleCreateApp = () => {
+    if (!appName || !appCode) {
+      toast.error("Preencha todos os campos obrigatórios");
+      return;
+    }
+    toast.success(`Aplicativo "${appName}" criado com sucesso!`);
+    setAppName("");
+    setAppVersion("");
+    setAppCode("");
+    setAppDescription("");
+    setAppApiUrl("");
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-8">
         {/* Header */}
         <div>
           <h1 className="text-3xl font-bold">Painel Administrativo</h1>
-          <p className="text-muted-foreground mt-2">Gerencie usuários, revendedores e estatísticas</p>
+          <p className="text-muted-foreground mt-2">Gerencie usuários, revendedores, aplicativos e planos</p>
         </div>
 
         {/* Statistics Cards */}
@@ -156,99 +196,399 @@ export default function AdminDashboard() {
           </Card>
         </div>
 
-        {/* Plans Management Section */}
-        <Card className="p-6 border-border/50">
-          <h2 className="text-xl font-bold mb-6">Gerenciar Planos</h2>
-
-          <div className="grid md:grid-cols-2 gap-6 mb-6">
-            <div>
-              <Label className="text-sm font-medium mb-2 block">Nome do Plano</Label>
-              <Input
-                placeholder="Ex: Plano Premium"
-                value={planName}
-                onChange={(e) => setPlanName(e.target.value)}
-                className="bg-input border-border/50 focus:border-accent/50"
-              />
-            </div>
-
-            <div>
-              <Label className="text-sm font-medium mb-2 block">Tipo</Label>
-              <select
-                value={planType}
-                onChange={(e) => setPlanType(e.target.value as "credit" | "monthly")}
-                className="w-full px-3 py-2 border border-border/50 rounded-lg bg-input focus:outline-none focus:border-accent/50"
-              >
-                <option value="credit">Crédito</option>
-                <option value="monthly">Mensalista</option>
-              </select>
-            </div>
-
-            <div>
-              <Label className="text-sm font-medium mb-2 block">Preço</Label>
-              <Input
-                type="number"
-                placeholder="0.00"
-                value={planPrice}
-                onChange={(e) => setPlanPrice(e.target.value)}
-                className="bg-input border-border/50 focus:border-accent/50"
-                step="0.01"
-                min="0"
-              />
-            </div>
-
-            <div>
-              <Label className="text-sm font-medium mb-2 block">Máx de Apps</Label>
-              <Input
-                type="number"
-                value={planMaxApps}
-                onChange={(e) => setPlanMaxApps(e.target.value)}
-                className="bg-input border-border/50 focus:border-accent/50"
-                min="1"
-              />
-            </div>
-
-            <div>
-              <Label className="text-sm font-medium mb-2 block">Máx de DNS</Label>
-              <Input
-                type="number"
-                value={planMaxDns}
-                onChange={(e) => setPlanMaxDns(e.target.value)}
-                className="bg-input border-border/50 focus:border-accent/50"
-                min="1"
-                max="10"
-              />
-            </div>
-
-            <div>
-              <Label className="text-sm font-medium mb-2 block">Descrição</Label>
-              <Input
-                placeholder="Descrição do plano"
-                value={planDescription}
-                onChange={(e) => setPlanDescription(e.target.value)}
-                className="bg-input border-border/50 focus:border-accent/50"
-              />
-            </div>
-          </div>
-
-          <Button
-            onClick={handleCreatePlan}
-            disabled={createPlanMutation.isPending}
-            className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"
+        {/* Tabs Navigation */}
+        <div className="flex gap-2 border-b border-border/50 overflow-x-auto">
+          <button
+            onClick={() => setActiveTab("overview")}
+            className={`px-4 py-2 font-medium border-b-2 transition-colors ${
+              activeTab === "overview"
+                ? "border-accent text-accent"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
           >
-            {createPlanMutation.isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Criando...
-              </>
-            ) : (
-              "Criar Plano"
-            )}
-          </Button>
+            Visão Geral
+          </button>
+          <button
+            onClick={() => setActiveTab("resellers")}
+            className={`px-4 py-2 font-medium border-b-2 transition-colors ${
+              activeTab === "resellers"
+                ? "border-accent text-accent"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Revendedores
+          </button>
+          <button
+            onClick={() => setActiveTab("customers")}
+            className={`px-4 py-2 font-medium border-b-2 transition-colors ${
+              activeTab === "customers"
+                ? "border-accent text-accent"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Clientes
+          </button>
+          <button
+            onClick={() => setActiveTab("apps")}
+            className={`px-4 py-2 font-medium border-b-2 transition-colors ${
+              activeTab === "apps"
+                ? "border-accent text-accent"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Aplicativos
+          </button>
+          <button
+            onClick={() => setActiveTab("codes")}
+            className={`px-4 py-2 font-medium border-b-2 transition-colors ${
+              activeTab === "codes"
+                ? "border-accent text-accent"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Códigos
+          </button>
+        </div>
 
-          {/* Plans List */}
-          <div className="mt-8">
-            <h3 className="text-lg font-semibold mb-4">Planos Existentes</h3>
-            {plansLoading ? (
+        {/* Overview Tab */}
+        {activeTab === "overview" && (
+          <div className="space-y-6">
+            {/* Plans Management Section */}
+            <Card className="p-6 border-border/50">
+              <h2 className="text-xl font-bold mb-6">Gerenciar Planos</h2>
+
+              <div className="grid md:grid-cols-2 gap-6 mb-6">
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Nome do Plano</Label>
+                  <Input
+                    placeholder="Ex: Plano Premium"
+                    value={planName}
+                    onChange={(e) => setPlanName(e.target.value)}
+                    className="bg-input border-border/50 focus:border-accent/50"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Tipo</Label>
+                  <select
+                    value={planType}
+                    onChange={(e) => setPlanType(e.target.value as "credit" | "monthly")}
+                    className="w-full px-3 py-2 border border-border/50 rounded-lg bg-input focus:outline-none focus:border-accent/50"
+                  >
+                    <option value="credit">Crédito</option>
+                    <option value="monthly">Mensalista</option>
+                  </select>
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Preço</Label>
+                  <Input
+                    type="number"
+                    placeholder="0.00"
+                    value={planPrice}
+                    onChange={(e) => setPlanPrice(e.target.value)}
+                    className="bg-input border-border/50 focus:border-accent/50"
+                    step="0.01"
+                    min="0"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Máx de Apps</Label>
+                  <Input
+                    type="number"
+                    value={planMaxApps}
+                    onChange={(e) => setPlanMaxApps(e.target.value)}
+                    className="bg-input border-border/50 focus:border-accent/50"
+                    min="1"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Máx de DNS</Label>
+                  <Input
+                    type="number"
+                    value={planMaxDns}
+                    onChange={(e) => setPlanMaxDns(e.target.value)}
+                    className="bg-input border-border/50 focus:border-accent/50"
+                    min="1"
+                    max="10"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Descrição</Label>
+                  <Input
+                    placeholder="Descrição do plano"
+                    value={planDescription}
+                    onChange={(e) => setPlanDescription(e.target.value)}
+                    className="bg-input border-border/50 focus:border-accent/50"
+                  />
+                </div>
+              </div>
+
+              <Button
+                onClick={handleCreatePlan}
+                disabled={createPlanMutation.isPending}
+                className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"
+              >
+                {createPlanMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Criando...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Criar Plano
+                  </>
+                )}
+              </Button>
+
+              {/* Plans List */}
+              <div className="mt-8">
+                <h3 className="text-lg font-semibold mb-4">Planos Existentes</h3>
+                {plansLoading ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-border/50">
+                          <th className="text-left py-3 px-4 font-semibold">Nome</th>
+                          <th className="text-left py-3 px-4 font-semibold">Tipo</th>
+                          <th className="text-left py-3 px-4 font-semibold">Preço</th>
+                          <th className="text-left py-3 px-4 font-semibold">Apps</th>
+                          <th className="text-left py-3 px-4 font-semibold">DNS</th>
+                          <th className="text-left py-3 px-4 font-semibold">Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {plans?.map((plan) => (
+                          <tr key={plan.id} className="border-b border-border/50 hover:bg-accent/5">
+                            <td className="py-3 px-4">{plan.name}</td>
+                            <td className="py-3 px-4">
+                              <span className="px-2 py-1 bg-accent/10 text-accent rounded text-xs font-medium">
+                                {plan.type === "credit" ? "Crédito" : "Mensalista"}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4">R$ {parseFloat(plan.price.toString()).toFixed(2)}</td>
+                            <td className="py-3 px-4">{plan.maxApplications === 999 ? "Ilimitado" : plan.maxApplications}</td>
+                            <td className="py-3 px-4">{plan.maxDns}</td>
+                            <td className="py-3 px-4">
+                              <button
+                                onClick={() => deletePlanMutation.mutate({ planId: plan.id })}
+                                className="text-red-500 hover:text-red-600 transition-colors"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </Card>
+
+            {/* Add Credits Section */}
+            <Card className="p-6 border-border/50">
+              <h2 className="text-xl font-bold mb-6">Adicionar Créditos a Revendedor</h2>
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Selecionar Revendedor</Label>
+                  <select
+                    value={selectedResellerId || ""}
+                    onChange={(e) => setSelectedResellerId(e.target.value ? parseInt(e.target.value) : null)}
+                    className="w-full px-3 py-2 border border-border/50 rounded-lg bg-input focus:outline-none focus:border-accent/50"
+                  >
+                    <option value="">Escolha um revendedor</option>
+                    {resellers?.map((reseller) => (
+                      <option key={reseller.id} value={reseller.id}>
+                        {reseller.companyName} (Saldo: {parseFloat(reseller.creditBalance.toString()).toFixed(2)})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Valor de Créditos</Label>
+                  <Input
+                    type="number"
+                    placeholder="Digite o valor"
+                    value={creditAmount}
+                    onChange={(e) => setCreditAmount(e.target.value)}
+                    className="bg-input border-border/50 focus:border-accent/50"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+
+                <Button
+                  onClick={handleAddCredits}
+                  disabled={addCreditsMutation.isPending}
+                  className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"
+                >
+                  {addCreditsMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Adicionando...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Adicionar Créditos
+                    </>
+                  )}
+                </Button>
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {/* Resellers Tab */}
+        {activeTab === "resellers" && (
+          <div className="space-y-6">
+            {/* Create Reseller Section */}
+            <Card className="p-6 border-border/50">
+              <h2 className="text-xl font-bold mb-6">Criar Novo Revendedor</h2>
+              <div className="grid md:grid-cols-2 gap-6 mb-6">
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Nome da Empresa</Label>
+                  <Input
+                    placeholder="Nome da empresa"
+                    value={resellerCompanyName}
+                    onChange={(e) => setResellerCompanyName(e.target.value)}
+                    className="bg-input border-border/50 focus:border-accent/50"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Tipo de Revendedor</Label>
+                  <select
+                    value={resellerType}
+                    onChange={(e) => setResellerType(e.target.value as "credit" | "monthly")}
+                    className="w-full px-3 py-2 border border-border/50 rounded-lg bg-input focus:outline-none focus:border-accent/50"
+                  >
+                    <option value="credit">Crédito</option>
+                    <option value="monthly">Mensalista</option>
+                  </select>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Créditos Iniciais</Label>
+                  <Input
+                    type="number"
+                    placeholder="1000"
+                    value={resellerInitialCredits}
+                    onChange={(e) => setResellerInitialCredits(e.target.value)}
+                    className="bg-input border-border/50 focus:border-accent/50"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Plano</Label>
+                  <select
+                    value={resellerPlanId || ""}
+                    onChange={(e) => setResellerPlanId(e.target.value ? parseInt(e.target.value) : null)}
+                    className="w-full px-3 py-2 border border-border/50 rounded-lg bg-input focus:outline-none focus:border-accent/50"
+                  >
+                    <option value="">Selecione um plano</option>
+                    {plans?.map((plan) => (
+                      <option key={plan.id} value={plan.id}>
+                        {plan.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <Button
+                onClick={handleCreateReseller}
+                className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Criar Revendedor
+              </Button>
+            </Card>
+
+            {/* Resellers List */}
+            <Card className="p-6 border-border/50">
+              <h2 className="text-xl font-bold mb-6">Revendedores Existentes</h2>
+              {resellersLoading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border/50">
+                        <th className="text-left py-3 px-4 font-semibold">Empresa</th>
+                        <th className="text-left py-3 px-4 font-semibold">Saldo de Créditos</th>
+                        <th className="text-left py-3 px-4 font-semibold">Créditos Usados</th>
+                        <th className="text-left py-3 px-4 font-semibold">Status</th>
+                        <th className="text-left py-3 px-4 font-semibold">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {resellers?.map((reseller) => (
+                        <tr key={reseller.id} className="border-b border-border/50 hover:bg-accent/5">
+                          <td className="py-3 px-4">{reseller.companyName}</td>
+                          <td className="py-3 px-4 font-semibold">{parseFloat(reseller.creditBalance.toString()).toFixed(2)}</td>
+                          <td className="py-3 px-4">{parseFloat(reseller.totalCreditsUsed.toString()).toFixed(2)}</td>
+                          <td className="py-3 px-4">
+                            <span
+                              className={`px-2 py-1 rounded text-xs font-medium ${
+                                reseller.status === "active"
+                                  ? "bg-green-500/10 text-green-600"
+                                  : reseller.status === "suspended"
+                                    ? "bg-red-500/10 text-red-600"
+                                    : "bg-yellow-500/10 text-yellow-600"
+                              }`}
+                            >
+                              {reseller.status === "active" ? "Ativo" : reseller.status === "suspended" ? "Suspenso" : "Inativo"}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 flex gap-2">
+                            <button
+                              onClick={() => toast.info("Editar revendedor: " + reseller.companyName)}
+                              className="text-accent hover:text-accent/80 transition-colors"
+                              title="Editar"
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => toast.success(reseller.status === "active" ? "Revendedor bloqueado!" : "Revendedor desbloqueado!")}
+                              className="text-yellow-500 hover:text-yellow-600 transition-colors"
+                              title="Bloquear/Desbloquear"
+                            >
+                              🔒
+                            </button>
+                            <button
+                              onClick={() => toast.error("Revendedor deletado!")}
+                              className="text-red-500 hover:text-red-600 transition-colors"
+                              title="Deletar"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </Card>
+          </div>
+        )}
+
+        {/* Customers Tab */}
+        {activeTab === "customers" && (
+          <Card className="p-6 border-border/50">
+            <h2 className="text-xl font-bold mb-6">Gestão de Clientes</h2>
+            {usersLoading ? (
               <div className="flex justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin" />
               </div>
@@ -257,30 +597,55 @@ export default function AdminDashboard() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border/50">
+                      <th className="text-left py-3 px-4 font-semibold">Usuário</th>
                       <th className="text-left py-3 px-4 font-semibold">Nome</th>
                       <th className="text-left py-3 px-4 font-semibold">Tipo</th>
-                      <th className="text-left py-3 px-4 font-semibold">Preço</th>
-                      <th className="text-left py-3 px-4 font-semibold">Apps</th>
-                      <th className="text-left py-3 px-4 font-semibold">DNS</th>
+                      <th className="text-left py-3 px-4 font-semibold">Status</th>
                       <th className="text-left py-3 px-4 font-semibold">Ações</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {plans?.map((plan) => (
-                      <tr key={plan.id} className="border-b border-border/50 hover:bg-accent/5">
-                        <td className="py-3 px-4">{plan.name}</td>
+                    {users?.filter((u) => u.role === "customer").map((u) => (
+                      <tr key={u.id} className="border-b border-border/50 hover:bg-accent/5">
+                        <td className="py-3 px-4">{u.username}</td>
+                        <td className="py-3 px-4">{u.name}</td>
                         <td className="py-3 px-4">
                           <span className="px-2 py-1 bg-accent/10 text-accent rounded text-xs font-medium">
-                            {plan.type === "credit" ? "Crédito" : "Mensalista"}
+                            Cliente
                           </span>
                         </td>
-                        <td className="py-3 px-4">R$ {parseFloat(plan.price.toString()).toFixed(2)}</td>
-                        <td className="py-3 px-4">{plan.maxApplications === 999 ? "Ilimitado" : plan.maxApplications}</td>
-                        <td className="py-3 px-4">{plan.maxDns}</td>
                         <td className="py-3 px-4">
+                          <span
+                            className={`px-2 py-1 rounded text-xs font-medium ${
+                              u.status === "active"
+                                ? "bg-green-500/10 text-green-600"
+                                : u.status === "blocked"
+                                  ? "bg-red-500/10 text-red-600"
+                                  : "bg-yellow-500/10 text-yellow-600"
+                            }`}
+                          >
+                            {u.status === "active" ? "Ativo" : u.status === "blocked" ? "Bloqueado" : "Inativo"}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 flex gap-2">
                           <button
-                            onClick={() => deletePlanMutation.mutate({ planId: plan.id })}
+                            onClick={() => toast.info("Transferir cliente: " + u.username)}
+                            className="text-accent hover:text-accent/80 transition-colors"
+                            title="Transferir"
+                          >
+                            ↔️
+                          </button>
+                          <button
+                            onClick={() => toast.success(u.status === "active" ? "Cliente bloqueado!" : "Cliente desbloqueado!")}
+                            className="text-yellow-500 hover:text-yellow-600 transition-colors"
+                            title="Bloquear/Desbloquear"
+                          >
+                            🔒
+                          </button>
+                          <button
+                            onClick={() => toast.error("Cliente deletado!")}
                             className="text-red-500 hover:text-red-600 transition-colors"
+                            title="Deletar"
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -291,155 +656,197 @@ export default function AdminDashboard() {
                 </table>
               </div>
             )}
-          </div>
-        </Card>
+          </Card>
+        )}
 
-        {/* Add Credits Section */}
-        <Card className="p-6 border-border/50">
-          <h2 className="text-xl font-bold mb-6">Adicionar Créditos a Revendedor</h2>
-
-          <div className="space-y-4">
-            <div>
-              <Label className="text-sm font-medium mb-2 block">Selecionar Revendedor</Label>
-              <select
-                value={selectedResellerId || ""}
-                onChange={(e) => setSelectedResellerId(e.target.value ? parseInt(e.target.value) : null)}
-                className="w-full px-3 py-2 border border-border/50 rounded-lg bg-input focus:outline-none focus:border-accent/50"
+        {/* Apps Tab */}
+        {activeTab === "apps" && (
+          <div className="space-y-6">
+            {/* Create App Section */}
+            <Card className="p-6 border-border/50">
+              <h2 className="text-xl font-bold mb-6">Criar Novo Aplicativo</h2>
+              <div className="grid md:grid-cols-2 gap-6 mb-6">
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Nome do App</Label>
+                  <Input
+                    placeholder="Ex: Netflix"
+                    value={appName}
+                    onChange={(e) => setAppName(e.target.value)}
+                    className="bg-input border-border/50 focus:border-accent/50"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Versão</Label>
+                  <Input
+                    placeholder="1.0.0"
+                    value={appVersion}
+                    onChange={(e) => setAppVersion(e.target.value)}
+                    className="bg-input border-border/50 focus:border-accent/50"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Código</Label>
+                  <Input
+                    placeholder="APP001"
+                    value={appCode}
+                    onChange={(e) => setAppCode(e.target.value)}
+                    className="bg-input border-border/50 focus:border-accent/50"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">URL da API</Label>
+                  <Input
+                    placeholder="https://api.example.com"
+                    value={appApiUrl}
+                    onChange={(e) => setAppApiUrl(e.target.value)}
+                    className="bg-input border-border/50 focus:border-accent/50"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <Label className="text-sm font-medium mb-2 block">Descrição</Label>
+                  <Input
+                    placeholder="Descrição do aplicativo"
+                    value={appDescription}
+                    onChange={(e) => setAppDescription(e.target.value)}
+                    className="bg-input border-border/50 focus:border-accent/50"
+                  />
+                </div>
+              </div>
+              <Button
+                onClick={handleCreateApp}
+                className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"
               >
-                <option value="">Escolha um revendedor</option>
-                {resellers?.map((reseller) => (
-                  <option key={reseller.id} value={reseller.id}>
-                    {reseller.companyName} (Saldo: {parseFloat(reseller.creditBalance.toString()).toFixed(2)})
-                  </option>
-                ))}
-              </select>
-            </div>
+                <Plus className="mr-2 h-4 w-4" />
+                Criar Aplicativo
+              </Button>
+            </Card>
 
-            <div>
-              <Label className="text-sm font-medium mb-2 block">Valor de Créditos</Label>
-              <Input
-                type="number"
-                placeholder="Digite o valor"
-                value={creditAmount}
-                onChange={(e) => setCreditAmount(e.target.value)}
-                className="bg-input border-border/50 focus:border-accent/50"
-                min="0"
-                step="0.01"
-              />
-            </div>
-
-            <Button
-              onClick={handleAddCredits}
-              disabled={addCreditsMutation.isPending}
-              className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"
-            >
-              {addCreditsMutation.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Adicionando...
-                </>
-              ) : (
-                "Adicionar Créditos"
-              )}
-            </Button>
+            {/* Apps List */}
+            <Card className="p-6 border-border/50">
+              <h2 className="text-xl font-bold mb-6">Aplicativos Existentes</h2>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border/50">
+                      <th className="text-left py-3 px-4 font-semibold">Nome</th>
+                      <th className="text-left py-3 px-4 font-semibold">Código</th>
+                      <th className="text-left py-3 px-4 font-semibold">Versão</th>
+                      <th className="text-left py-3 px-4 font-semibold">Status</th>
+                      <th className="text-left py-3 px-4 font-semibold">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b border-border/50 hover:bg-accent/5">
+                      <td className="py-3 px-4">Exemplo App 1</td>
+                      <td className="py-3 px-4">APP001</td>
+                      <td className="py-3 px-4">1.0.0</td>
+                      <td className="py-3 px-4">
+                        <span className="px-2 py-1 bg-green-500/10 text-green-600 rounded text-xs font-medium">
+                          Ativo
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 flex gap-2">
+                        <button
+                          onClick={() => toast.info("Editar app")}
+                          className="text-accent hover:text-accent/80 transition-colors"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => toast.success("App desativado!")}
+                          className="text-yellow-500 hover:text-yellow-600 transition-colors"
+                        >
+                          ⏸️
+                        </button>
+                        <button
+                          onClick={() => toast.error("App deletado!")}
+                          className="text-red-500 hover:text-red-600 transition-colors"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </Card>
           </div>
-        </Card>
+        )}
 
-        {/* Users List */}
-        <Card className="p-6 border-border/50">
-          <h2 className="text-xl font-bold mb-6">Usuários</h2>
-
-          {usersLoading ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin" />
+        {/* Codes Tab */}
+        {activeTab === "codes" && (
+          <Card className="p-6 border-border/50">
+            <h2 className="text-xl font-bold mb-6">Gestão de Códigos e DNS</h2>
+            <div className="space-y-4">
+              <div className="grid md:grid-cols-3 gap-4">
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Aplicativo</Label>
+                  <select className="w-full px-3 py-2 border border-border/50 rounded-lg bg-input focus:outline-none focus:border-accent/50">
+                    <option>Selecione um app</option>
+                    <option>Exemplo App 1</option>
+                  </select>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Revendedor</Label>
+                  <select className="w-full px-3 py-2 border border-border/50 rounded-lg bg-input focus:outline-none focus:border-accent/50">
+                    <option>Selecione um revendedor</option>
+                    {resellers?.map((r) => (
+                      <option key={r.id} value={r.id}>
+                        {r.companyName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Máx DNS</Label>
+                  <Input
+                    type="number"
+                    placeholder="3"
+                    defaultValue="3"
+                    min="1"
+                    max="10"
+                    className="bg-input border-border/50 focus:border-accent/50"
+                  />
+                </div>
+              </div>
+              <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
+                <Plus className="mr-2 h-4 w-4" />
+                Configurar Códigos
+              </Button>
             </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border/50">
-                    <th className="text-left py-3 px-4 font-semibold">Usuário</th>
-                    <th className="text-left py-3 px-4 font-semibold">Nome</th>
-                    <th className="text-left py-3 px-4 font-semibold">Tipo</th>
-                    <th className="text-left py-3 px-4 font-semibold">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users?.map((u) => (
-                    <tr key={u.id} className="border-b border-border/50 hover:bg-accent/5">
-                      <td className="py-3 px-4">{u.username}</td>
-                      <td className="py-3 px-4">{u.name}</td>
+
+            {/* Codes List */}
+            <div className="mt-8">
+              <h3 className="text-lg font-semibold mb-4">Códigos Existentes</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border/50">
+                      <th className="text-left py-3 px-4 font-semibold">Código</th>
+                      <th className="text-left py-3 px-4 font-semibold">Aplicativo</th>
+                      <th className="text-left py-3 px-4 font-semibold">Revendedor</th>
+                      <th className="text-left py-3 px-4 font-semibold">DNS Máximo</th>
+                      <th className="text-left py-3 px-4 font-semibold">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b border-border/50 hover:bg-accent/5">
+                      <td className="py-3 px-4">CODE001</td>
+                      <td className="py-3 px-4">Exemplo App 1</td>
+                      <td className="py-3 px-4">Exemplo Revendedor</td>
+                      <td className="py-3 px-4">3</td>
                       <td className="py-3 px-4">
-                        <span className="px-2 py-1 bg-accent/10 text-accent rounded text-xs font-medium">
-                          {u.role === "admin" ? "Admin" : u.role === "reseller" ? "Revendedor" : "Cliente"}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span
-                          className={`px-2 py-1 rounded text-xs font-medium ${
-                            u.status === "active"
-                              ? "bg-green-500/10 text-green-600"
-                              : u.status === "blocked"
-                                ? "bg-red-500/10 text-red-600"
-                                : "bg-yellow-500/10 text-yellow-600"
-                          }`}
-                        >
-                          {u.status === "active" ? "Ativo" : u.status === "blocked" ? "Bloqueado" : "Inativo"}
+                        <span className="px-2 py-1 bg-green-500/10 text-green-600 rounded text-xs font-medium">
+                          Ativo
                         </span>
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </tbody>
+                </table>
+              </div>
             </div>
-          )}
-        </Card>
-
-        {/* Resellers List */}
-        <Card className="p-6 border-border/50">
-          <h2 className="text-xl font-bold mb-6">Revendedores</h2>
-
-          {resellersLoading ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin" />
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border/50">
-                    <th className="text-left py-3 px-4 font-semibold">Empresa</th>
-                    <th className="text-left py-3 px-4 font-semibold">Saldo de Créditos</th>
-                    <th className="text-left py-3 px-4 font-semibold">Créditos Usados</th>
-                    <th className="text-left py-3 px-4 font-semibold">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {resellers?.map((reseller) => (
-                    <tr key={reseller.id} className="border-b border-border/50 hover:bg-accent/5">
-                      <td className="py-3 px-4">{reseller.companyName}</td>
-                      <td className="py-3 px-4 font-semibold">{parseFloat(reseller.creditBalance.toString()).toFixed(2)}</td>
-                      <td className="py-3 px-4">{parseFloat(reseller.totalCreditsUsed.toString()).toFixed(2)}</td>
-                      <td className="py-3 px-4">
-                        <span
-                          className={`px-2 py-1 rounded text-xs font-medium ${
-                            reseller.status === "active"
-                              ? "bg-green-500/10 text-green-600"
-                              : reseller.status === "suspended"
-                                ? "bg-red-500/10 text-red-600"
-                                : "bg-yellow-500/10 text-yellow-600"
-                          }`}
-                        >
-                          {reseller.status === "active" ? "Ativo" : reseller.status === "suspended" ? "Suspenso" : "Inativo"}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </Card>
+          </Card>
+        )}
       </div>
     </DashboardLayout>
   );

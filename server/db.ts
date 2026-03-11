@@ -98,6 +98,17 @@ export async function getAllResellers(): Promise<Reseller[]> {
   }, 600); // 10 minutes cache
 }
 
+export async function updateReseller(resellerId: number, updates: Record<string, any>): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const reseller = await getResellerById(resellerId);
+  if (!reseller) throw new Error("Reseller not found");
+
+  await db.update(resellers).set(updates).where(eq(resellers.id, resellerId));
+  cache.delete(`reseller:${resellerId}`);
+}
+
 export async function updateResellerCredits(resellerId: number, amount: number): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");

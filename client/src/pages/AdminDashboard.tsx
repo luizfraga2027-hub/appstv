@@ -43,6 +43,11 @@ export default function AdminDashboard() {
   const [resellerInitialCredits, setResellerInitialCredits] = useState("1000");
   const [resellerPlanId, setResellerPlanId] = useState<number | null>(null);
 
+  // Edit reseller modal states
+  const [editingResellerId, setEditingResellerId] = useState<number | null>(null);
+  const [editCompanyName, setEditCompanyName] = useState("");
+  const [editStatus, setEditStatus] = useState<"active" | "suspended" | "inactive">("active");
+
   // App form states
   const [appName, setAppName] = useState("");
   const [appVersion, setAppVersion] = useState("");
@@ -101,6 +106,18 @@ export default function AdminDashboard() {
     },
     onError: (error) => {
       toast.error(error.message || "Erro ao desbloquear usuário");
+    },
+  });
+
+  const updateResellerMutation = trpc.admin.updateReseller.useMutation({
+    onSuccess: () => {
+      toast.success("Revendedor atualizado com sucesso!");
+      setEditingResellerId(null);
+      setEditCompanyName("");
+      refetchResellers();
+    },
+    onError: (error) => {
+      toast.error(error.message || "Erro ao atualizar revendedor");
     },
   });
 
@@ -518,7 +535,11 @@ export default function AdminDashboard() {
                         </td>
                         <td className="py-3 px-4 flex gap-2">
                           <button
-                            onClick={() => toast.info("Editar revendedor: " + reseller.companyName)}
+                            onClick={() => {
+                              setEditingResellerId(reseller.id);
+                              setEditCompanyName(reseller.companyName);
+                              setEditStatus(reseller.status as "active" | "suspended" | "inactive");
+                            }}
                             className="text-accent hover:text-accent/80 transition-colors"
                             title="Editar"
                           >
@@ -540,6 +561,66 @@ export default function AdminDashboard() {
               </div>
             )}
           </Card>
+        )}
+
+        {/* Edit Reseller Modal */}
+        {editingResellerId && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <Card className="p-6 w-full max-w-md border-border/50">
+              <h2 className="text-xl font-bold mb-6">Editar Revendedor</h2>
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Nome da Empresa</Label>
+                  <Input
+                    placeholder="Nome da empresa"
+                    value={editCompanyName}
+                    onChange={(e) => setEditCompanyName(e.target.value)}
+                    className="bg-input border-border/50 focus:border-accent/50"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Status</Label>
+                  <select
+                    value={editStatus}
+                    onChange={(e) => setEditStatus(e.target.value as "active" | "suspended" | "inactive")}
+                    className="w-full px-3 py-2 border border-border/50 rounded-lg bg-input focus:outline-none focus:border-accent/50"
+                  >
+                    <option value="active">Ativo</option>
+                    <option value="suspended">Suspenso</option>
+                    <option value="inactive">Inativo</option>
+                  </select>
+                </div>
+                <div className="flex gap-2 pt-4">
+                  <Button
+                    onClick={() => {
+                      updateResellerMutation.mutate({
+                        resellerId: editingResellerId,
+                        companyName: editCompanyName,
+                        status: editStatus,
+                      });
+                    }}
+                    disabled={updateResellerMutation.isPending}
+                    className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground"
+                  >
+                    {updateResellerMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Salvando...
+                      </>
+                    ) : (
+                      "Salvar"
+                    )}
+                  </Button>
+                  <Button
+                    onClick={() => setEditingResellerId(null)}
+                    className="flex-1 bg-muted hover:bg-muted/80"
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          </div>
         )}
 
         {/* Customers Tab */}

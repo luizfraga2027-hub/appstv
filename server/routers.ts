@@ -546,6 +546,32 @@ const adminRouter = router({
       return { success: true };
     }),
 
+  updateReseller: adminProcedure
+    .input(
+      z.object({
+        resellerId: z.number(),
+        companyName: z.string().min(1).max(255).optional(),
+        status: z.enum(["active", "suspended", "inactive"]).optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const reseller = await db.getResellerById(input.resellerId);
+      if (!reseller) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Reseller not found" });
+      }
+
+      // Update reseller data
+      const updates: Record<string, any> = {};
+      if (input.companyName) updates.companyName = input.companyName;
+      if (input.status) updates.status = input.status;
+
+      if (Object.keys(updates).length > 0) {
+        await db.updateReseller(input.resellerId, updates);
+      }
+
+      return { success: true, reseller: await db.getResellerById(input.resellerId) };
+    }),
+
   deleteReseller: adminProcedure
     .input(z.object({ resellerId: z.number() }))
     .mutation(async ({ input }) => {

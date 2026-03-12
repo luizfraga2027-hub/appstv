@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
 import { Users, CreditCard, Zap, BarChart3, Loader2, Trash2, Edit2, Plus } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,10 +17,22 @@ export default function AdminDashboard() {
   const [creditAmount, setCreditAmount] = useState("");
   const [activeTab, setActiveTab] = useState<"overview" | "resellers" | "customers" | "apps" | "codes">("overview");
 
-  // Redirect if not admin
-  if (user?.role !== "admin") {
-    setLocation("/");
-    return null;
+  // Redirect if not admin (using useEffect to avoid render-phase side effect)
+  useEffect(() => {
+    if (user && user.role !== "admin") {
+      setLocation("/");
+    }
+  }, [user, setLocation]);
+
+  // Show loading while checking auth
+  if (!user) {
+    return (
+      <DashboardLayout>
+        <div className="flex justify-center items-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      </DashboardLayout>
+    );
   }
 
   // Fetch statistics
@@ -185,8 +197,11 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteReseller = (resellerId: number) => {
+    console.log("[DEBUG] handleDeleteReseller called with:", resellerId);
     if (confirm("Tem certeza que deseja deletar este revendedor?")) {
+      console.log("[DEBUG] Calling deleteResellerMutation.mutate");
       deleteResellerMutation.mutate({ resellerId });
+      console.log("[DEBUG] deleteResellerMutation.mutate called");
     }
   };
 
@@ -199,11 +214,13 @@ export default function AdminDashboard() {
   };
 
   const handleCreatePlan = () => {
+    console.log("[DEBUG] handleCreatePlan called");
     if (!planName || !planPrice) {
       toast.error("Preencha todos os campos obrigatórios");
       return;
     }
 
+    console.log("[DEBUG] Calling createPlanMutation.mutate");
     createPlanMutation.mutate({
       name: planName,
       type: planType,
@@ -212,6 +229,7 @@ export default function AdminDashboard() {
       maxDns: parseInt(planMaxDns),
       description: planDescription,
     });
+    console.log("[DEBUG] createPlanMutation.mutate called");
   };
 
   return (
@@ -447,7 +465,12 @@ export default function AdminDashboard() {
                             <td className="py-3 px-4">{plan.maxDns}</td>
                             <td className="py-3 px-4">
                               <button
-                                onClick={() => deletePlanMutation.mutate({ planId: plan.id })}
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  deletePlanMutation.mutate({ planId: plan.id });
+                                }}
                                 className="text-red-500 hover:text-red-600 transition-colors"
                               >
                                 <Trash2 className="h-4 w-4" />
@@ -569,7 +592,12 @@ export default function AdminDashboard() {
                             <Edit2 className="h-4 w-4" />
                           </button>
                           <button
-                            onClick={() => handleDeleteReseller(reseller.id)}
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleDeleteReseller(reseller.id);
+                            }}
                             className="text-red-500 hover:text-red-600 transition-colors"
                             title="Deletar"
                             disabled={deleteResellerMutation.isPending}
@@ -699,7 +727,12 @@ export default function AdminDashboard() {
                             🔒
                           </button>
                           <button
-                            onClick={() => handleDeleteUser(u.id)}
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleDeleteUser(u.id);
+                            }}
                             className="text-red-500 hover:text-red-600 transition-colors"
                             title="Deletar"
                             disabled={deleteUserMutation.isPending}

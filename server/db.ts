@@ -592,7 +592,9 @@ export async function deleteReseller(id: number) {
   
   // Delete reseller
   await db.delete(resellers).where(eq(resellers.id, id));
-  cache.delete(`reseller_${id}`);
+  
+  cache.delete(`reseller:${id}`);
+  cache.delete('resellers:all'); // Also clear the all resellers cache
 }
 
 export async function deleteCustomer(id: number) {

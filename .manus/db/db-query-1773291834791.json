@@ -1,0 +1,13 @@
+{
+  "query": "SELECT COUNT(*) as total_resellers FROM resellers;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2HhSjZvaCXKQGrz.root --database Bsk4ozJFukmegE5iMnzBQL --execute SELECT COUNT(*) as total_resellers FROM resellers;",
+  "rows": [
+    {
+      "total_resellers": "6"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_resellers\n6\n",
+  "stderr": "",
+  "execution_time_ms": 117
+}

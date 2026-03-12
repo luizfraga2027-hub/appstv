@@ -105,11 +105,13 @@
 
 ---
 
-## FASE 9: Painel Administrativo Avançado
-- [ ] **Gestão de Revendedores**:
+## FASE 9: Painel Administrativo Avançado ✅ PARCIAL
+- [x] **Gestão de Revendedores**: CRUD básico (criar, editar, deletar) ✅
+  - [x] Editar status (ativo/suspenso/inativo)
+  - [x] Deletar revendedor
+  - [x] Adicionar/remover créditos
   - [ ] Criar revendedor: definir tipo (CREDIT ou MONTHLY), plano, DNS (se monthly), aplicativos permitidos
-  - [ ] Editar, bloquear, desbloquear, deletar revendedor
-  - [ ] Adicionar/remover créditos (crédito)
+  - [ ] Bloquear/desbloquear revendedor
   - [ ] Visualizar código de ativação (mensalista)
 - [ ] **Gestão de Clientes**:
   - [ ] Visualizar todos clientes
@@ -150,7 +152,9 @@
 
 ---
 
-## FASE 12: Testes Completos (Vitest)
+## FASE 12: Testes Completos (Vitest) ✅ PARCIAL
+- [x] Testar CRUD de revendedores (criar, editar, deletar) ✅
+- [x] Testar cache invalidation ao deletar revendedor ✅
 - [ ] Testar autenticação (todos os tipos de usuário)
 - [ ] Testar ativação por MAC ID (mensalista e crédito)
 - [ ] Testar uso de DNS e anti-compartilhamento

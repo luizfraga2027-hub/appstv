@@ -64,6 +64,15 @@ export default function AdminDashboard() {
   const [editStatus, setEditStatus] = useState<"active" | "suspended" | "inactive">("active");
   const [editPixKey, setEditPixKey] = useState("");
 
+  // Edit customer modal states
+  const [editingCustomerId, setEditingCustomerId] = useState<number | null>(null);
+  const [editCustomerAppId, setEditCustomerAppId] = useState<number | null>(null);
+  const [editCustomerListUrl, setEditCustomerListUrl] = useState("");
+  const [editCustomerUsername, setEditCustomerUsername] = useState("");
+  const [editCustomerPassword, setEditCustomerPassword] = useState("");
+  const [editCustomerActivationDate, setEditCustomerActivationDate] = useState("");
+  const [editCustomerStatus, setEditCustomerStatus] = useState<"active" | "inactive" | "blocked">("active");
+
   // App form states
   const [appName, setAppName] = useState("");
   const [appVersion, setAppVersion] = useState("");
@@ -216,6 +225,42 @@ export default function AdminDashboard() {
     } else {
       unblockUserMutation.mutate({ userId });
     }
+  };
+
+  const updateCustomerMutation = trpc.admin.updateCustomer.useMutation({
+    onSuccess: () => {
+      toast.success("Cliente atualizado com sucesso!");
+      setEditingCustomerId(null);
+      refetchUsers();
+    },
+    onError: (error) => {
+      toast.error(error.message || "Erro ao atualizar cliente");
+    },
+  });
+
+  const handleEditCustomer = (customerId: number) => {
+    const customer = users?.find(u => u.id === customerId);
+    if (customer) {
+      setEditingCustomerId(customerId);
+      setEditCustomerStatus(customer.status as "active" | "inactive" | "blocked");
+    }
+  };
+
+  const handleUpdateCustomer = () => {
+    if (!editingCustomerId) return;
+
+    const updates: any = {};
+    if (editCustomerAppId !== null) updates.applicationId = editCustomerAppId;
+    if (editCustomerListUrl) updates.iptvListUrl = editCustomerListUrl;
+    if (editCustomerUsername) updates.customerUsername = editCustomerUsername;
+    if (editCustomerPassword) updates.customerPassword = editCustomerPassword;
+    if (editCustomerActivationDate) updates.activationDate = new Date(editCustomerActivationDate);
+    if (editCustomerStatus) updates.status = editCustomerStatus;
+
+    updateCustomerMutation.mutate({
+      customerId: editingCustomerId,
+      ...updates,
+    });
   };
 
   const handleCreatePlan = () => {
@@ -774,6 +819,13 @@ export default function AdminDashboard() {
                         </td>
                         <td className="py-3 px-4 flex gap-2">
                           <button
+                            onClick={() => handleEditCustomer(u.id)}
+                            className="text-blue-500 hover:text-blue-600 transition-colors"
+                            title="Editar"
+                          >
+                            ✏️
+                          </button>
+                          <button
                             onClick={() => handleBlockUser(u.id, u.status)}
                             className="text-yellow-500 hover:text-yellow-600 transition-colors"
                             title="Bloquear/Desbloquear"
@@ -803,6 +855,92 @@ export default function AdminDashboard() {
             )}
           </Card>
         )}
+
+        {/* Edit Customer Modal */}
+        {editingCustomerId && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+              <Card className="w-full max-w-2xl p-6 border-border/50 rounded-lg">
+                <h3 className="text-xl font-bold mb-6">Editar Cliente</h3>
+                <div className="grid md:grid-cols-2 gap-4 mb-6">
+                  <div>
+                    <Label className="text-sm font-medium mb-2 block">Aplicativo</Label>
+                    <select
+                      value={editCustomerAppId || ""}
+                      onChange={(e) => setEditCustomerAppId(e.target.value ? parseInt(e.target.value) : null)}
+                      className="w-full px-3 py-2 bg-input border border-border/50 rounded-md"
+                    >
+                      <option value="">Selecione um aplicativo</option>
+                    </select>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium mb-2 block">Lista IPTV</Label>
+                    <Input
+                      placeholder="https://example.com/lista.m3u"
+                      value={editCustomerListUrl}
+                      onChange={(e) => setEditCustomerListUrl(e.target.value)}
+                      className="bg-input border-border/50 focus:border-accent/50"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium mb-2 block">Usuário</Label>
+                    <Input
+                      placeholder="Ex: usuario123"
+                      value={editCustomerUsername}
+                      onChange={(e) => setEditCustomerUsername(e.target.value)}
+                      className="bg-input border-border/50 focus:border-accent/50"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium mb-2 block">Senha</Label>
+                    <Input
+                      type="password"
+                      placeholder="Ex: senha123"
+                      value={editCustomerPassword}
+                      onChange={(e) => setEditCustomerPassword(e.target.value)}
+                      className="bg-input border-border/50 focus:border-accent/50"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium mb-2 block">Data de Ativação</Label>
+                    <Input
+                      type="datetime-local"
+                      value={editCustomerActivationDate}
+                      onChange={(e) => setEditCustomerActivationDate(e.target.value)}
+                      className="bg-input border-border/50 focus:border-accent/50"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium mb-2 block">Status</Label>
+                    <select
+                      value={editCustomerStatus}
+                      onChange={(e) => setEditCustomerStatus(e.target.value as "active" | "inactive" | "blocked")}
+                      className="w-full px-3 py-2 bg-input border border-border/50 rounded-md"
+                    >
+                      <option value="active">Ativo</option>
+                      <option value="inactive">Inativo</option>
+                      <option value="blocked">Bloqueado</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleUpdateCustomer}
+                    disabled={updateCustomerMutation.isPending}
+                    className="bg-accent hover:bg-accent/90"
+                  >
+                    {updateCustomerMutation.isPending ? "Salvando..." : "Salvar"}
+                  </Button>
+                  <Button
+                    onClick={() => setEditingCustomerId(null)}
+                    variant="outline"
+                    className="border-border/50"
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              </Card>
+            </div>
+          )}
 
         {/* Apps Tab */}
         {activeTab === "apps" && (

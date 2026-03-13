@@ -628,6 +628,40 @@ const adminRouter = router({
       await db.deleteApplication(input.appId);
       return { success: true };
     }),
+
+  getAllCustomers: adminProcedure.query(async () => {
+    return db.getAllCustomers();
+  }),
+
+  updateCustomer: adminProcedure
+    .input(
+      z.object({
+        customerId: z.number(),
+        applicationId: z.number().optional(),
+        iptvListUrl: z.string().optional(),
+        customerUsername: z.string().max(255).optional(),
+        customerPassword: z.string().max(255).optional(),
+        activationDate: z.date().optional(),
+        status: z.enum(["active", "inactive", "blocked"]).optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const customer = await db.getCustomerById(input.customerId);
+      if (!customer) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Customer not found" });
+      }
+
+      const updates: any = {};
+      if (input.applicationId !== undefined) updates.applicationId = input.applicationId;
+      if (input.iptvListUrl !== undefined) updates.iptvListUrl = input.iptvListUrl;
+      if (input.customerUsername !== undefined) updates.customerUsername = input.customerUsername;
+      if (input.customerPassword !== undefined) updates.customerPassword = input.customerPassword;
+      if (input.activationDate !== undefined) updates.activationDate = input.activationDate;
+      if (input.status !== undefined) updates.status = input.status;
+
+      await db.updateCustomer(input.customerId, updates);
+      return { success: true };
+    }),
 });
 
 // ===== SMART TV API ROUTER =====

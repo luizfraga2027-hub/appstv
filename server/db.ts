@@ -258,6 +258,31 @@ export async function getCustomersByResellerId(resellerId: number) {
   return db.select().from(customers).where(eq(customers.resellerId, resellerId));
 }
 
+export async function getAllCustomers() {
+  const db = await getDb();
+  if (!db) return [];
+
+  const { customers } = await import("../drizzle/schema");
+  return db.select().from(customers);
+}
+
+export async function getCustomerById(customerId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const { customers } = await import("../drizzle/schema");
+  const result = await db.select().from(customers).where(eq(customers.id, customerId)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function updateCustomer(customerId: number, updates: Record<string, any>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const { customers } = await import("../drizzle/schema");
+  return db.update(customers).set(updates).where(eq(customers.id, customerId));
+}
+
 export async function updateCustomerIptvList(userId: number, iptvListUrl: string) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");

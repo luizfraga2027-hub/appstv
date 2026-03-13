@@ -551,10 +551,10 @@ export default function AdminDashboard() {
                 </div>
 
                 <div>
-                  <Label className="text-sm font-medium mb-2 block">Valor de Créditos</Label>
+                  <Label className="text-sm font-medium mb-2 block">Quantidade de Créditos</Label>
                   <Input
                     type="number"
-                    placeholder="Digite o valor"
+                    placeholder="Digite a quantidade"
                     value={creditAmount}
                     onChange={(e) => setCreditAmount(e.target.value)}
                     className="bg-input border-border/50 focus:border-accent/50"
@@ -599,7 +599,7 @@ export default function AdminDashboard() {
                   <thead>
                     <tr className="border-b border-border/50">
                       <th className="text-left py-3 px-4 font-semibold">Empresa</th>
-                      <th className="text-left py-3 px-4 font-semibold">Saldo de Créditos</th>
+                      <th className="text-left py-3 px-4 font-semibold">Quantidade de Créditos</th>
                       <th className="text-left py-3 px-4 font-semibold">Créditos Usados</th>
                       <th className="text-left py-3 px-4 font-semibold">Status</th>
                       <th className="text-left py-3 px-4 font-semibold">Ações</th>

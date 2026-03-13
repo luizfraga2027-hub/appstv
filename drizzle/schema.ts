@@ -30,6 +30,13 @@ export const resellers = mysqlTable("resellers", {
   totalCreditsUsed: decimal("totalCreditsUsed", { precision: 12, scale: 2 }).default("0").notNull(),
   iptvListUrl: text("iptvListUrl"),
   codePrice: decimal("codePrice", { precision: 10, scale: 2 }).default("0").notNull(),
+  type: mysqlEnum("type", ["monthly", "credit"]).default("credit").notNull(),
+  planId: int("planId"),
+  pixKey: varchar("pixKey", { length: 255 }),
+  activationDate: timestamp("activationDate"),
+  expirationDate: timestamp("expirationDate"),
+  maxDns: int("maxDns").default(3).notNull(),
+  allowedApps: text("allowedApps"),
   status: mysqlEnum("status", ["active", "inactive", "suspended"]).default("active").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -95,7 +102,11 @@ export const customers = mysqlTable("customers", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
   resellerId: int("resellerId").notNull(),
+  applicationId: int("applicationId"),
   iptvListUrl: text("iptvListUrl"),
+  customerUsername: varchar("customerUsername", { length: 255 }),
+  customerPassword: varchar("customerPassword", { length: 255 }),
+  activationDate: timestamp("activationDate"),
   status: mysqlEnum("status", ["active", "inactive", "blocked"]).default("active").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -196,10 +207,13 @@ export const customersRelations = relations(customers, ({ one }) => ({
 export const plans = mysqlTable("plans", {
   id: int("id").autoincrement().primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
-  type: mysqlEnum("type", ["credit", "monthly"]).notNull(),
+  type: mysqlEnum("type", ["reseller_monthly", "reseller_credit", "customer"]).notNull(),
   maxApplications: int("maxApplications").default(999).notNull(), // 999 = unlimited
   maxDns: int("maxDns").default(3).notNull(),
   maxConnections: int("maxConnections").default(999).notNull(), // 999 = unlimited
+  maxUsers: int("maxUsers"), // Para plano mensalista
+  credits: int("credits"), // Para plano crédito
+  contractDuration: int("contractDuration"), // Duração em dias (30, 90, 180, 365)
   price: decimal("price", { precision: 10, scale: 2 }).default("0").notNull(),
   description: text("description"),
   status: mysqlEnum("status", ["active", "inactive"]).default("active").notNull(),
@@ -237,6 +251,7 @@ export const applications = mysqlTable("applications", {
   code: varchar("code", { length: 64 }).notNull().unique(),
   version: varchar("version", { length: 32 }).notNull(),
   description: text("description"),
+  logoUrl: text("logoUrl"),
   status: mysqlEnum("status", ["active", "inactive", "deprecated"]).default("active").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

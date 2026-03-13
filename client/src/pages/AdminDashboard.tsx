@@ -43,10 +43,13 @@ export default function AdminDashboard() {
   
   // Form states
   const [planName, setPlanName] = useState("");
-  const [planType, setPlanType] = useState<"credit" | "monthly">("credit");
+  const [planType, setPlanType] = useState<"reseller_credit" | "reseller_monthly" | "customer">("reseller_credit");
   const [planPrice, setPlanPrice] = useState("");
   const [planMaxApps, setPlanMaxApps] = useState("999");
   const [planMaxDns, setPlanMaxDns] = useState("3");
+  const [planMaxUsers, setPlanMaxUsers] = useState("");
+  const [planCredits, setPlanCredits] = useState("");
+  const [planContractDuration, setPlanContractDuration] = useState("");
   const [planDescription, setPlanDescription] = useState("");
 
   // Reseller form states
@@ -66,6 +69,7 @@ export default function AdminDashboard() {
   const [appCode, setAppCode] = useState("");
   const [appDescription, setAppDescription] = useState("");
   const [appApiUrl, setAppApiUrl] = useState("");
+  const [appLogoUrl, setAppLogoUrl] = useState("");
 
   // Mutations
   const addCreditsMutation = trpc.admin.addCreditsToReseller.useMutation({
@@ -358,11 +362,12 @@ export default function AdminDashboard() {
                   <Label className="text-sm font-medium mb-2 block">Tipo</Label>
                   <select
                     value={planType}
-                    onChange={(e) => setPlanType(e.target.value as "credit" | "monthly")}
+                    onChange={(e) => setPlanType(e.target.value as "reseller_credit" | "reseller_monthly" | "customer")}
                     className="w-full px-3 py-2 border border-border/50 rounded-lg bg-input focus:outline-none focus:border-accent/50"
                   >
-                    <option value="credit">Crédito</option>
-                    <option value="monthly">Mensalista</option>
+                    <option value="reseller_credit">Revendedor Crédito</option>
+                    <option value="reseller_monthly">Revendedor Mensalista</option>
+                    <option value="customer">Usuário Final</option>
                   </select>
                 </div>
 
@@ -457,7 +462,7 @@ export default function AdminDashboard() {
                             <td className="py-3 px-4">{plan.name}</td>
                             <td className="py-3 px-4">
                               <span className="px-2 py-1 bg-accent/10 text-accent rounded text-xs font-medium">
-                                {plan.type === "credit" ? "Crédito" : "Mensalista"}
+                                {plan.type === "reseller_credit" ? "Crédito" : plan.type === "reseller_monthly" ? "Mensalista" : "Cliente"}
                               </span>
                             </td>
                             <td className="py-3 px-4">R$ {parseFloat(plan.price.toString()).toFixed(2)}</td>

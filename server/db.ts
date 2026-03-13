@@ -118,6 +118,8 @@ export async function updateResellerCredits(resellerId: number, amount: number):
 
   const newBalance = parseFloat(reseller.creditBalance.toString()) + amount;
   await db.update(resellers).set({ creditBalance: newBalance.toString() }).where(eq(resellers.id, resellerId));
+  cache.delete(`reseller:${resellerId}`);
+  cache.delete('resellers:all');
 }
 
 // ===== CREDIT TRANSACTION QUERIES =====

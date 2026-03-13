@@ -411,10 +411,13 @@ const adminRouter = router({
     .input(
       z.object({
         name: z.string().min(1),
-        type: z.enum(["credit", "monthly"]),
+        type: z.enum(["reseller_credit", "reseller_monthly", "customer"]),
         maxApplications: z.number().min(1).default(999),
-        maxDns: z.number().min(1).max(10).default(3),
+        maxDns: z.number().min(0).default(3),
         maxConnections: z.number().min(1).default(999),
+        maxUsers: z.number().optional(),
+        credits: z.number().optional(),
+        contractDuration: z.number().optional(),
         price: z.number().nonnegative(),
         description: z.string().optional(),
       })
@@ -426,6 +429,9 @@ const adminRouter = router({
         maxApplications: input.maxApplications,
         maxDns: input.maxDns,
         maxConnections: input.maxConnections,
+        maxUsers: input.maxUsers,
+        credits: input.credits,
+        contractDuration: input.contractDuration,
         price: input.price.toString(),
         description: input.description,
         status: "active",
@@ -688,6 +694,7 @@ const applicationsRouter = router({
         code: z.string().min(1),
         version: z.string().min(1),
         description: z.string().optional(),
+        logoUrl: z.string().url().optional(),
       })
     )
     .mutation(async ({ input }) => {
@@ -696,6 +703,7 @@ const applicationsRouter = router({
         code: input.code,
         version: input.version,
         description: input.description,
+        logoUrl: input.logoUrl,
         status: "active",
       });
       return { success: true };

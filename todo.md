@@ -176,3 +176,54 @@
 ✅ Admin controla aplicativos, revendedores e planos
 ✅ **ZERO E-MAIL, ZERO OAUTH, ZERO SERVIÇOS EXTERNOS**
 ✅ Autenticação 100% local com JWT + username + password
+
+---
+
+## 🔧 BUGS A CORRIGIR - PRIORIDADE ALTA
+
+- [ ] Créditos de revendedor demorando para atualizar em tempo real
+- [ ] Status (ativo/suspenso/inativo) demorando para atualizar
+- [ ] Planos criados não estão sendo salvos
+- [ ] Aplicativos criados não estão sendo salvos
+- [ ] Falta campo para remover créditos de revendedor crédito
+
+---
+
+## 📋 NOVAS FUNCIONALIDADES - ADMIN DASHBOARD
+
+### Revendedores
+- [ ] Campo: Tipo de Revendedor (Mensalista / Crédito)
+- [ ] Campo: Data de Ativação (apenas para Mensalista)
+- [ ] Campo: Prazo (1 mês, 2 meses, 3 meses, 1 ano)
+- [ ] Campo: Usuário e Senha (com opção de alterar)
+- [ ] Campo: Alterar Plano (Mensalista ↔ Crédito)
+- [ ] Campo: Aplicativos Permitidos
+- [ ] Campo: Quantidade de DNS (decidido pelo admin, máx 10)
+- [ ] Campo: Chave PIX
+
+### Planos (3 tipos)
+- [ ] **Plano Revendedor Mensalista**: usuários ativos, aplicativos, DNS, tempo contratação, valores, obs
+- [ ] **Plano Revendedor Crédito**: quantidade créditos, aplicativos, DNS ilimitado, valores, obs
+- [ ] **Plano Usuário Final**: aplicativos, valores, tempo contratação, obs
+
+### Gestão de Clientes
+- [ ] Campo: Qual aplicativo está usando
+- [ ] Campo: Qual lista IPTV adicionou
+- [ ] Campo: Usuário e Senha (com opção de alterar)
+- [ ] Campo: Data de Ativação (via MAC)
+- [ ] Campo: Status (Ativo / Suspenso / Inativo)
+
+### Aplicativos
+- [ ] Campo: Logo do Aplicativo (com tamanho adequado)
+- [ ] Exibir logo nos painéis de revendedor e usuário final
+
+---
+
+## 🧪 TESTES VITEST NECESSÁRIOS
+
+- [ ] Testar criação de revendedor com tipo (mensalista/crédito)
+- [ ] Testar atualização de créditos em tempo real
+- [ ] Testar atualização de status em tempo real
+- [ ] Testar criação de planos específicos
+- [ ] Testar criação de aplicativos com logo
+- [ ] Testar gestão de clientes com novos campos

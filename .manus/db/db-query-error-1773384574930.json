@@ -1,0 +1,8 @@
+{
+  "query": "UPDATE plans SET type = 'reseller_credit' WHERE type = 'credit'; UPDATE plans SET type = 'reseller_monthly' WHERE type = 'monthly';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2HhSjZvaCXKQGrz.root --database Bsk4ozJFukmegE5iMnzBQL --execute UPDATE plans SET type = 'reseller_credit' WHERE type = 'credit'; UPDATE plans SET type = 'reseller_monthly' WHERE type = 'monthly';",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1265 (01000) at line 1: Data truncated for column '%s' at row %d"
+  ]
+}

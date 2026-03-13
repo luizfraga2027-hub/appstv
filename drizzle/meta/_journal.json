@@ -57,6 +57,20 @@
       "when": 1773112293215,
       "tag": "0007_absurd_longshot",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1773384561455,
+      "tag": "0008_chief_stephen_strange",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "5",
+      "when": 1773384979824,
+      "tag": "0009_jazzy_storm",
+      "breakpoints": true
     }
   ]
 }

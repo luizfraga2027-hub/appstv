@@ -62,6 +62,7 @@ export default function AdminDashboard() {
   const [editingResellerId, setEditingResellerId] = useState<number | null>(null);
   const [editCompanyName, setEditCompanyName] = useState("");
   const [editStatus, setEditStatus] = useState<"active" | "suspended" | "inactive">("active");
+  const [editPixKey, setEditPixKey] = useState("");
 
   // App form states
   const [appName, setAppName] = useState("");
@@ -231,6 +232,9 @@ export default function AdminDashboard() {
       price: parseFloat(planPrice),
       maxApplications: parseInt(planMaxApps),
       maxDns: parseInt(planMaxDns),
+      maxUsers: planMaxUsers ? parseInt(planMaxUsers) : undefined,
+      credits: planCredits ? parseInt(planCredits) : undefined,
+      contractDuration: planContractDuration ? parseInt(planContractDuration) : undefined,
       description: planDescription,
     });
     console.log("[DEBUG] createPlanMutation.mutate called");
@@ -414,6 +418,42 @@ export default function AdminDashboard() {
                     value={planDescription}
                     onChange={(e) => setPlanDescription(e.target.value)}
                     className="bg-input border-border/50 focus:border-accent/50"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Máx de Usuários (Plano Mensalista)</Label>
+                  <Input
+                    type="number"
+                    placeholder="Ex: 100"
+                    value={planMaxUsers}
+                    onChange={(e) => setPlanMaxUsers(e.target.value)}
+                    className="bg-input border-border/50 focus:border-accent/50"
+                    min="1"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Créditos (Plano Crédito)</Label>
+                  <Input
+                    type="number"
+                    placeholder="Ex: 1000"
+                    value={planCredits}
+                    onChange={(e) => setPlanCredits(e.target.value)}
+                    className="bg-input border-border/50 focus:border-accent/50"
+                    min="1"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Duração do Contrato (dias)</Label>
+                  <Input
+                    type="number"
+                    placeholder="Ex: 30, 90, 180, 365"
+                    value={planContractDuration}
+                    onChange={(e) => setPlanContractDuration(e.target.value)}
+                    className="bg-input border-border/50 focus:border-accent/50"
+                    min="1"
                   />
                 </div>
               </div>
@@ -646,6 +686,15 @@ export default function AdminDashboard() {
                     <option value="inactive">Inativo</option>
                   </select>
                 </div>
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Chave PIX</Label>
+                  <Input
+                    placeholder="Ex: chave@pix.com ou CPF"
+                    value={editPixKey}
+                    onChange={(e) => setEditPixKey(e.target.value)}
+                    className="bg-input border-border/50 focus:border-accent/50"
+                  />
+                </div>
                 <div className="flex gap-2 pt-4">
                   <Button
                     onClick={() => {
@@ -653,6 +702,7 @@ export default function AdminDashboard() {
                         resellerId: editingResellerId,
                         companyName: editCompanyName,
                         status: editStatus,
+                        pixKey: editPixKey || undefined,
                       });
                     }}
                     disabled={updateResellerMutation.isPending}
@@ -804,6 +854,16 @@ export default function AdminDashboard() {
                   className="bg-input border-border/50 focus:border-accent/50"
                 />
               </div>
+              <div className="md:col-span-2">
+                <Label className="text-sm font-medium mb-2 block">URL da Logo</Label>
+                <Input
+                  type="url"
+                  placeholder="https://example.com/logo.png"
+                  value={appLogoUrl}
+                  onChange={(e) => setAppLogoUrl(e.target.value)}
+                  className="bg-input border-border/50 focus:border-accent/50"
+                />
+              </div>
             </div>
             <Button
               onClick={() => {
@@ -816,6 +876,7 @@ export default function AdminDashboard() {
                   code: appCode,
                   version: appVersion,
                   description: appDescription,
+                  logoUrl: appLogoUrl || undefined,
                 });
               }}
               disabled={createAppMutation.isPending}

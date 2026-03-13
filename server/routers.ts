@@ -558,6 +558,7 @@ const adminRouter = router({
         resellerId: z.number(),
         companyName: z.string().min(1).max(255).optional(),
         status: z.enum(["active", "suspended", "inactive"]).optional(),
+        pixKey: z.string().max(255).optional(),
       })
     )
     .mutation(async ({ input }) => {
@@ -570,6 +571,7 @@ const adminRouter = router({
       const updates: Record<string, any> = {};
       if (input.companyName) updates.companyName = input.companyName;
       if (input.status) updates.status = input.status;
+      if (input.pixKey) updates.pixKey = input.pixKey;
 
       if (Object.keys(updates).length > 0) {
         await db.updateReseller(input.resellerId, updates);
@@ -605,6 +607,7 @@ const adminRouter = router({
         code: z.string().min(1),
         version: z.string().min(1),
         description: z.string().optional(),
+        logoUrl: z.string().url().optional(),
       })
     )
     .mutation(async ({ input }) => {
@@ -613,6 +616,7 @@ const adminRouter = router({
         code: input.code,
         version: input.version,
         description: input.description,
+        logoUrl: input.logoUrl,
         status: "active",
       });
       return { success: true };
